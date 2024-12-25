@@ -26,4 +26,19 @@ public class Vector2(BigDecimal x, BigDecimal y)
     // dot product
     public static Vector2 operator *(Vector2 a, Vector2 b)
         => new Vector2(a.X * b.X, a.Y * b.Y);
+
+    public BigDecimal Magnitude()
+        => BigDecimal.Sqrt(X * X + Y * Y, 100);
+    
+    public static BigDecimal CrossProduct(Vector2 a, Vector2 b)
+        => a.X * b.Y - a.Y * b.X;
+    
+    public static Vector2 CrossProduct(Vector2 a, BigDecimal b)
+        => new (a.Y * b, -a.X * b);
+
+    public static Vector2 CrossProduct(BigDecimal a, Vector2 b)
+        => new (-a * b.Y, a * b.X);
+
+    public override string ToString()
+        => "<" + X + ", " + Y + ">";
 }

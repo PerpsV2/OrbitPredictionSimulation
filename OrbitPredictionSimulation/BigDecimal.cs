@@ -40,6 +40,23 @@ public struct BigDecimal
         }
     }
 
+    private BigDecimal(decimal mantissa, int exponent)
+    {
+        int decimals = ((Decimal.GetBits(mantissa)[3] >> 16) & 0x7F);
+        Mantissa = (BigInteger)(mantissa * (decimal)BigInteger.Pow(10, decimals));
+        Exponent = exponent - decimals;
+        Normalize();
+        if (AlwaysTruncate)
+        {
+            Truncate();
+        }
+    }
+
+    public static BigDecimal Create(decimal mantissa, int exponent)
+    {
+        return new BigDecimal(mantissa, exponent);
+    }
+
     /// <summary>
     /// Removes trailing zeros on the mantissa
     /// </summary>
@@ -107,7 +124,7 @@ public struct BigDecimal
 
     public static implicit operator BigDecimal(int value)
     {
-        return new BigDecimal(value, 0);
+        return new BigDecimal((BigInteger)value, 0);
     }
 
     public static implicit operator BigDecimal(double value)
@@ -240,28 +257,34 @@ public struct BigDecimal
 
     #region Additional mathematical functions
 
-    public static BigDecimal Exp(double exponent)
+    public static BigDecimal Sqrt(BigDecimal value, int precision)
     {
-        var tmp = (BigDecimal)1;
-        while (Math.Abs(exponent) > 100)
+        if (value.Mantissa == 0 && value.Exponent == 0) return 0;
+        if (value.Mantissa > 0)
         {
-            var diff = exponent > 0 ? 100 : -100;
-            tmp *= Math.Exp(diff);
-            exponent -= diff;
-        }
-        return tmp * Math.Exp(exponent);
-    }
+            if (value.Exponent % 2 == 1)
+            {
+                value.Mantissa *= 10;
+                value.Exponent--;
+            }
 
-    public static BigDecimal Pow(double basis, double exponent)
-    {
-        var tmp = (BigDecimal)1;
-        while (Math.Abs(exponent) > 100)
-        {
-            var diff = exponent > 0 ? 100 : -100;
-            tmp *= Math.Pow(basis, diff);
-            exponent -= diff;
+            value.Exponent /= 2;
+            BigInteger extendedMantissa = value.Mantissa * BigInteger.Pow(10, precision * 2);
+            int bitLength = Convert.ToInt32(Math.Ceiling(BigInteger.Log(extendedMantissa, 2)));
+            BigInteger root = BigInteger.One << (bitLength / 2);
+
+            while (!Utils.isSqrt(extendedMantissa, root))
+            {
+                root += extendedMantissa / root;
+                root /= 2;
+            }
+
+            value.Normalize();
+            value.Exponent -= precision;
+            return new BigDecimal(root, value.Exponent);
         }
-        return tmp * Math.Pow(basis, exponent);
+        
+        throw new ArithmeticException();
     }
 
     #endregion
@@ -269,8 +292,8 @@ public struct BigDecimal
     public override string ToString()
     {
         string mantissaString = Mantissa.ToString();
-        if (Mantissa.ToString().Length > 4)
-            mantissaString = (Mantissa / BigInteger.Parse("1" + String.Concat(Enumerable.Repeat("0", Mantissa.ToString().Length - 4)))).ToString();
+        if (Mantissa.ToString().Length > 30)
+            mantissaString = (Mantissa / BigInteger.Parse("1" + String.Concat(Enumerable.Repeat("0", Mantissa.ToString().Length - 30)))).ToString();
         mantissaString = mantissaString.Insert(mantissaString[0] == '-' ? 2 : 1, ".");
         return string.Concat(mantissaString, "E", Exponent + Mantissa.ToString().Length - 1);
     }

@@ -31,35 +31,33 @@ using SKCanvas canvas = surface.Canvas;
 
 IInputContext input = window.CreateInput();
 
-Body sun = new Body(30, new BigDecimal(696340, 3), Vector2.Zero, Vector2.Zero);
-Body venus = new Body(30, new BigDecimal(6052, 3), 
-    new Vector2(new BigDecimal(10839,7), 0), 
-    Vector2.Zero);
-Body earth = new Body(30, new BigDecimal(6378, 3), 
-    new Vector2(new BigDecimal(14721,7), 0), 
-    Vector2.Zero);
-Body moon = new Body(30, new BigDecimal(1737, 3), 
-    new Vector2(new BigDecimal(14721,7) + new BigDecimal(3844, 5), 0), 
-    Vector2.Zero);
-Body mars = new Body(30, new BigDecimal(3390, 3), 
-    new Vector2(new BigDecimal(24042,7), 0), 
-    Vector2.Zero);
-Body jupiter = new Body(30, new BigDecimal(69911, 3), 
-    new Vector2(new BigDecimal(75922,7), 0), 
-    Vector2.Zero);
-Body saturn = new Body(30, new BigDecimal(60268, 3), 
-    new Vector2(new BigDecimal(14405,8), 0), 
-    Vector2.Zero);
-Body uranus = new Body(30, new BigDecimal(25362, 3), 
-    new Vector2(new BigDecimal(29243,8), 0), 
-    Vector2.Zero);
-Body neptune = new Body(30, new BigDecimal(24622, 3), 
-    new Vector2(new BigDecimal(43,11), 0), 
-    Vector2.Zero);
-Body pluto = new Body(30, new BigDecimal(1188, 3), 
-    new Vector2(new BigDecimal(59,11), 0), 
-    Vector2.Zero);
-List<Body> bodies = new List<Body>{ sun, venus, earth, moon, mars, jupiter, saturn, uranus, neptune, pluto };
+Body sun = new Body(
+    "Sun",
+    new BigDecimal(1989, 27), 
+    new BigDecimal(696340, 3), 
+    Vector2.Zero, 
+    Vector2.Zero,
+    new SKColor(255, 255, 255, 255)
+    );
+Body earth = new Body(
+    "Earth",
+     BigDecimal.Create(5.97219m, 24), 
+    new BigDecimal(6378, 3), 
+    new Vector2(BigDecimal.Create(-9.421670287m,9), BigDecimal.Create(1.4615677115m, 11)), 
+    new Vector2(BigDecimal.Create(-3.021621743m, 4), BigDecimal.Create(-1.8407641746m, 3)),
+    new SKColor(100, 200, 255, 255),
+    sun
+    );
+Body moon = new Body(
+    "Moon",
+    30, 
+    new BigDecimal(1737, 3), 
+    new Vector2(new BigDecimal(3844, 5), 0), 
+    Vector2.Zero,
+    new SKColor(180, 180, 180, 255),
+    earth
+    );
+List<Body> bodies = [sun, earth, moon];
 Camera camera = new Camera(Vector2.Zero, 100, 100);
 
 int trackingIndex = 0;
@@ -88,14 +86,19 @@ void HandleInput(IKeyboard keyboard)
         camera.Width *= 1.05;
         camera.Height *= 1.05;
     }
-    if (keyboard.IsKeyPressed(Key.F)) {
+    if (keyboard.IsKeyPressed(Key.F)) 
+    {
         camera.Width *= 0.95;
         camera.Height *= 0.95;
     }
 }
 
+BigDecimal eccentricity = earth.CalculateEccentricity();
+Console.WriteLine(eccentricity);
+
 void OnRender(double _)
 {
+    //canvas.Scale(window.Size.X, window.Size.Y);
     grContext.ResetContext();
     canvas.Clear(SKColors.Black);
     SKPaint blackPaint = new SKPaint
