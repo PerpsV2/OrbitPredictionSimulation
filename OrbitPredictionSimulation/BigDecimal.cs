@@ -23,7 +23,7 @@ public struct BigDecimal
     /// Sets the maximum precision of division operations.
     /// If AlwaysTruncate is set to true all operations are affected.
     /// </summary>
-    public static int Precision = 50;
+    public static int Precision = 20;
 
     public BigInteger Mantissa { get; set; }
     public int Exponent { get; set; }
@@ -42,7 +42,7 @@ public struct BigDecimal
 
     private BigDecimal(decimal mantissa, int exponent)
     {
-        int decimals = ((Decimal.GetBits(mantissa)[3] >> 16) & 0x7F);
+        int decimals = (Decimal.GetBits(mantissa)[3] >> 16) & 0x7F;
         Mantissa = (BigInteger)(mantissa * (decimal)BigInteger.Pow(10, decimals));
         Exponent = exponent - decimals;
         Normalize();

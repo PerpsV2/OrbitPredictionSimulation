@@ -5,27 +5,39 @@ using SkiaSharp;
 
 namespace OrbitPredictionSimulation;
 
-public class Body(string name, BigDecimal mass, BigDecimal radius, Vector2 position, Vector2 velocity, SKColor color)
+public class Body(string name, BigDecimal mass, BigDecimal radius, Vector2 position, Vector2 velocity, 
+    float trueAnomaly, SKColor color)
 {
-    private static readonly BigDecimal G = new BigDecimal(667430, -16);
-    private static readonly int MinimumRadius = 10;
-    private static readonly int CrossSpokeSize = 5;
+    private static readonly BigDecimal G = new(667430, -16);
+    private const int MinimumRadius = 10;
+    private const int CrossSpokeSize = 5;
+    private const int MaxPositions = 200;
 
     public string Name { get; set; } = name;
     public BigDecimal Mass { get; set; } = mass;
     public BigDecimal Radius { get; set; } = radius;
     public Vector2 Position { get; set; } = position;
+    public Vector2 AbsolutePosition => Position + (Parent?.AbsolutePosition ?? Vector2.Zero);
     public Vector2 Velocity { get; set; } = velocity;
+    public float TrueAnomaly { get; set; } = trueAnomaly;
     public SKColor Color { get; set; } = color;
     public Body? Parent { get; }
+    private readonly Vector2? _eccentricityVector;
+    private readonly BigDecimal _specificAngularMomentum;
+    private readonly OrbitPath _orbitPath = new OrbitPath(new List<Vector2>(), color);
 
-    public Body(string name, BigDecimal mass, BigDecimal radius, Vector2 position, Vector2 velocity, SKColor color,
-        Body? parent = null) : this(name, mass, radius, position, velocity, color)
+    private BigDecimal Mu => G * (Parent?? throw new NullReferenceException()).Mass;
+
+    public Body(string name, BigDecimal mass, BigDecimal radius, Vector2 position, Vector2 velocity, 
+        float trueAnomaly, SKColor color, Body? parent = null) 
+        : this(name, mass, radius, position, velocity, trueAnomaly, color)
     {
         if (parent == null) return;
         Parent = parent;
-        Position = Parent.Position + position;
-        Velocity = Parent.Velocity + velocity;
+        _orbitPath.Parent = parent;
+        _eccentricityVector = Vector2.CrossProduct(Velocity, Vector2.CrossProduct(Position, Velocity)) / Mu -
+                              Position / Position.Magnitude();
+        _specificAngularMomentum = Vector2.CrossProduct(Position, Velocity);
     }
     
     public void Draw(DrawOptions options)
@@ -33,8 +45,8 @@ public class Body(string name, BigDecimal mass, BigDecimal radius, Vector2 posit
         SKPaint paint = new SKPaint { Color = Color };
         Camera cam = options.Camera;
         SKCanvas canvas = options.Canvas;
-        float bodyScreenX = (float)((Position.X - cam.Left) / (cam.Right - cam.Left)) * options.ScreenSize.X;
-        float bodyScreenY = (float)((Position.Y - cam.Top) / (cam.Bottom - cam.Top)) * options.ScreenSize.Y;
+        float bodyScreenX = (float)((AbsolutePosition.X - cam.Left) / (cam.Right - cam.Left)) * options.ScreenSize.X;
+        float bodyScreenY = (float)((AbsolutePosition.Y - cam.Top) / (cam.Bottom - cam.Top)) * options.ScreenSize.Y;
         float circleRadius = (float)(Radius / (cam.Right - cam.Left)) * options.ScreenSize.X;
         if (circleRadius < MinimumRadius)
         {
@@ -45,18 +57,39 @@ public class Body(string name, BigDecimal mass, BigDecimal radius, Vector2 posit
         }
         canvas.DrawCircle(bodyScreenX, bodyScreenY, circleRadius, paint);
     }
+    
 
-    public BigDecimal CalculateEccentricity()
+    public BigDecimal PolarDistanceAtAnomaly(float angle)
     {
-        if (Parent == null) throw new Exception("Cannot calculate eccentricity because no parent is set");
-        BigDecimal mu = Parent.Mass * G;
-        return (Vector2.CrossProduct(Velocity, Vector2.CrossProduct(Position, Velocity)) / mu - 
-                Position / Position.Magnitude())
-            .Magnitude();
+        if (_eccentricityVector == null) throw new NullReferenceException();
+        BigDecimal constant = _specificAngularMomentum * _specificAngularMomentum / Mu;
+        double periapsisTrueAnomaly = Math.Atan((double)(_eccentricityVector.Y / _eccentricityVector.X));
+        if (_eccentricityVector.X < 0 && _eccentricityVector.Y > 0) periapsisTrueAnomaly = Math.PI - periapsisTrueAnomaly;
+        if (_eccentricityVector.X < 0 && _eccentricityVector.Y < 0) periapsisTrueAnomaly += Math.PI;
+        if (_eccentricityVector.X > 0 && _eccentricityVector.Y < 0) periapsisTrueAnomaly += Math.PI;
+        return constant / (1 - _eccentricityVector.Magnitude() * Math.Cos(angle - periapsisTrueAnomaly));
     }
 
-    public BigDecimal CalculateAngularMomentum()
+    public Vector2 CartesianDistanceAtAnomaly(float angle)
     {
-        return Vector2.CrossProduct(Position, Velocity * Mass);
+        BigDecimal distance = PolarDistanceAtAnomaly(angle);
+        return new Vector2(distance * Math.Cos(angle), distance * Math.Sin(angle));
+    }
+
+    public void LogPosition()
+    {
+        _orbitPath.Points.Add(Position);
+        if (_orbitPath.Points.Count > MaxPositions)
+            _orbitPath.Points.RemoveAt(0);
+    }
+
+    public void DrawOrbitPath(DrawOptions options)
+    {
+        _orbitPath.Draw(options);
+    }
+
+    public void CalculateOrbitScreenPoints(DrawOptions options)
+    {
+        _orbitPath.CalculateScreenPoints(options);
     }
 }

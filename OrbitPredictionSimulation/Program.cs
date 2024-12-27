@@ -37,23 +37,26 @@ Body sun = new Body(
     new BigDecimal(696340, 3), 
     Vector2.Zero, 
     Vector2.Zero,
+    0,
     new SKColor(255, 255, 255, 255)
     );
 Body earth = new Body(
     "Earth",
      BigDecimal.Create(5.97219m, 24), 
     new BigDecimal(6378, 3), 
-    new Vector2(BigDecimal.Create(-9.421670287m,9), BigDecimal.Create(1.4615677115m, 11)), 
-    new Vector2(BigDecimal.Create(-3.021621743m, 4), BigDecimal.Create(-1.8407641746m, 3)),
+    new Vector2(BigDecimal.Create(-1.1167278m,10), BigDecimal.Create(1.4670613m, 11)), 
+    new Vector2(BigDecimal.Create(-3.0195272m, 4), BigDecimal.Create(-2.3640870m, 3)),
+    0,
     new SKColor(100, 200, 255, 255),
     sun
     );
 Body moon = new Body(
     "Moon",
-    30, 
+    BigDecimal.Create(7.349m, 22), 
     new BigDecimal(1737, 3), 
-    new Vector2(new BigDecimal(3844, 5), 0), 
-    Vector2.Zero,
+    new Vector2(BigDecimal.Create(3.85m,8), 0), 
+    new Vector2(0, BigDecimal.Create(1.022828m, 3)),
+    0,
     new SKColor(180, 180, 180, 255),
     earth
     );
@@ -63,6 +66,21 @@ Camera camera = new Camera(Vector2.Zero, 100, 100);
 int trackingIndex = 0;
 Body? tracking = null;
 
+SKPaint blackPaint = new SKPaint
+{
+    Color = SKColors.White,
+};
+SKFont font = new SKFont()
+{
+    Size = 40,
+};
+DrawOptions drawOptions = new DrawOptions(
+    canvas,
+    blackPaint,
+    camera,
+    (window.Size.X, window.Size.Y)
+);
+
 void HandleKeyPresses(IKeyboard keyboard, Key key, int keyCode)
 {
     if (key == Key.Comma)
@@ -71,53 +89,55 @@ void HandleKeyPresses(IKeyboard keyboard, Key key, int keyCode)
         trackingIndex %= bodies.Count + 1;
         tracking = trackingIndex >= bodies.Count ? null : bodies[trackingIndex];
     }
+
+    if (key == Key.Period)
+    {
+        foreach (var body in bodies) body.CalculateOrbitScreenPoints(drawOptions);
+    }
 }
 input.Keyboards[0].KeyDown += HandleKeyPresses;
 
 void HandleInput(IKeyboard keyboard)
 {
-    if (keyboard.IsKeyPressed(Key.W)) camera.Position.Y -= camera.Height / 100;
-    if (keyboard.IsKeyPressed(Key.S)) camera.Position.Y += camera.Height / 100;
-    if (keyboard.IsKeyPressed(Key.A)) camera.Position.X -= camera.Width / 100;
-    if (keyboard.IsKeyPressed(Key.D)) camera.Position.X += camera.Width / 100;
+    if (keyboard.IsKeyPressed(Key.W)) camera.MoveBy(new Vector2(0, camera.Height / -100));
+    if (keyboard.IsKeyPressed(Key.S)) camera.MoveBy(new Vector2(0, camera.Height / 100));
+    if (keyboard.IsKeyPressed(Key.A)) camera.MoveBy(new Vector2(camera.Height / -100, 0));
+    if (keyboard.IsKeyPressed(Key.D)) camera.MoveBy(new Vector2(camera.Height / 100, 0));
     
-    if (keyboard.IsKeyPressed(Key.R))
-    {
-        camera.Width *= 1.05;
-        camera.Height *= 1.05;
-    }
-    if (keyboard.IsKeyPressed(Key.F)) 
-    {
-        camera.Width *= 0.95;
-        camera.Height *= 0.95;
-    }
+    if (keyboard.IsKeyPressed(Key.R)) camera.ScaleZoom(1.05f);
+    if (keyboard.IsKeyPressed(Key.F)) camera.ScaleZoom(0.95f);
 }
 
-BigDecimal eccentricity = earth.CalculateEccentricity();
-Console.WriteLine(eccentricity);
+void CalculateOrbitScreenPoints(object sender, EventArgs e)
+{
+    foreach (Body body in bodies) body.CalculateOrbitScreenPoints(drawOptions);
+}
 
+camera.OnChange += CalculateOrbitScreenPoints;
+
+float angle = 0;
+int i = 0;
 void OnRender(double _)
 {
+    angle += 0.01f;
+    ++i;
     //canvas.Scale(window.Size.X, window.Size.Y);
     grContext.ResetContext();
     canvas.Clear(SKColors.Black);
-    SKPaint blackPaint = new SKPaint
+    
+    foreach (Body body in bodies)
     {
-        Color = SKColors.White,
-    };
-    SKFont font = new SKFont()
-    {
-        Size = 40,
-    };
-    DrawOptions drawOptions = new DrawOptions(
-        canvas,
-        blackPaint,
-        camera,
-        (window.Size.X, window.Size.Y)
-        );
-    if (tracking != null)
-        camera.GoToBody(tracking);
-    foreach (Body body in bodies) body.Draw(drawOptions);
+        if (body.Parent != null)
+        {
+            body.Position = body.CartesianDistanceAtAnomaly(angle);
+            if (i % 10 == 0) body.LogPosition();
+            body.DrawOrbitPath(drawOptions);
+        }
+        if (tracking == body)
+            camera.GoToBody(body);
+        body.Draw(drawOptions);
+    }
+    
     HandleInput(input.Keyboards[0]);
     canvas.DrawText(camera.Position.X.ToString(), 20, 30, font, blackPaint);
     canvas.DrawText(camera.Position.Y.ToString(), 20, 60, font, blackPaint);
