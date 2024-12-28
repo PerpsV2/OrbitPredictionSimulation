@@ -35,6 +35,7 @@ public class OrbitPath(List<Vector2> points, SKColor color)
     
     public void Draw(DrawOptions options)
     {
-        options.Canvas.DrawPoints(SKPointMode.Lines, _screenPoints, options.Paint);
+        SKPaint paint = new SKPaint { Color = new SKColor(Color.Red, Color.Green, Color.Blue, 125) };
+        options.Canvas.DrawPoints(SKPointMode.Lines, _screenPoints, paint);
     }
 }

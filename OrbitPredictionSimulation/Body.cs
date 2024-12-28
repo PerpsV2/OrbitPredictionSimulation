@@ -11,7 +11,7 @@ public class Body(string name, ScientificDecimal mass, ScientificDecimal radius,
     private static readonly ScientificDecimal G = new(667430, -16);
     private const int MinimumRadius = 10;
     private const int CrossSpokeSize = 5;
-    private const int MaxPositions = 200;
+    private const int MaxPositions = 1000;
 
     public string Name { get; set; } = name;
     public ScientificDecimal Mass { get; set; } = mass;

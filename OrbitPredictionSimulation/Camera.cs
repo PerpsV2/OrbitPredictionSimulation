@@ -34,6 +34,6 @@ public class Camera(Vector2 position, ScientificDecimal width, ScientificDecimal
     
     public void GoToBody(Body body)
     {
-        MoveTo(new Vector2(body.Position.X, body.Position.Y));
+        MoveTo(new Vector2(body.AbsolutePosition.X, body.AbsolutePosition.Y));
     }
 }
