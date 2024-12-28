@@ -15,12 +15,9 @@ public class OrbitPath(List<Vector2> points, SKColor color)
         Camera cam = options.Camera;
         List<SKPoint> screenPoints = new List<SKPoint>();
         Vector2 origin = Parent?.Position ?? Vector2.Zero;
+        SKPoint? previousPoint = null;
         foreach (Vector2 worldPoint in Points)
         {
-            Console.WriteLine(worldPoint.X.Exponent);
-            Console.WriteLine(cam.Width.Exponent);
-            Console.WriteLine(Math.Abs(worldPoint.X.Exponent - cam.Width.Exponent));
-            if (Math.Abs(worldPoint.X.Exponent - cam.Width.Exponent) > 2) continue;
             SKPoint screenPoint = new SKPoint(
                 (float)((worldPoint.X - cam.Left + origin.X) / cam.Width) * options.ScreenSize.X, 
                 (float)((worldPoint.Y - cam.Top + origin.Y) / cam.Height) * options.ScreenSize.Y
@@ -29,9 +26,9 @@ public class OrbitPath(List<Vector2> points, SKColor color)
                 screenPoint.Y > 0 && screenPoint.Y <= options.ScreenSize.Y)
             {
                 screenPoints.Add(screenPoint);
-                if (screenPoints.Count > 1) screenPoints.Add(screenPoint);
+                screenPoints.Add(previousPoint ?? screenPoint);
             }
-            GC.Collect();
+            previousPoint = new SKPoint(screenPoint.X, screenPoint.Y);
         }
         _screenPoints = screenPoints.ToArray();
     }

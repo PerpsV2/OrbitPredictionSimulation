@@ -10,6 +10,7 @@ namespace OrbitPredictionSimulation;
 /// Author: Jan Christoph Bernack (contact: jc.bernack at gmail.com)
 /// License: public domain
 /// </summary>
+
 public struct BigDecimal
     : IComparable
     , IComparable<BigDecimal>
@@ -117,7 +118,8 @@ public struct BigDecimal
         // do not count the sign
         //return (value * value.Sign).ToString().Length;
         // faster version
-        return (int)Math.Ceiling(BigInteger.Log10(value * value.Sign));
+        if (value.Sign < 0) return (int)Math.Ceiling(BigInteger.Log10(BigInteger.Negate(value)));
+        else return (int)Math.Ceiling(BigInteger.Log10(value));
     }
 
     #region Conversions
@@ -176,8 +178,8 @@ public struct BigDecimal
 
     public static BigDecimal operator -(BigDecimal value)
     {
-        value.Mantissa *= -1;
-        return value;
+        BigDecimal result = new BigDecimal(BigInteger.Negate(value.Mantissa), value.Exponent);
+        return result.Truncate();
     }
 
     public static BigDecimal operator ++(BigDecimal value) => value + 1;
@@ -190,13 +192,17 @@ public struct BigDecimal
 
     private static BigDecimal Add(BigDecimal left, BigDecimal right)
     {
-        return left.Exponent > right.Exponent
+        BigDecimal sum = left.Exponent > right.Exponent
             ? new BigDecimal(AlignExponent(left, right) + right.Mantissa, right.Exponent)
             : new BigDecimal(AlignExponent(right, left) + left.Mantissa, left.Exponent);
+        return sum.Truncate();
     }
 
-    public static BigDecimal operator *(BigDecimal left, BigDecimal right) => 
-        new(left.Mantissa * right.Mantissa, left.Exponent + right.Exponent);
+    public static BigDecimal operator *(BigDecimal left, BigDecimal right)
+    {
+        BigDecimal product = new BigDecimal(left.Mantissa * right.Mantissa, left.Exponent + right.Exponent);
+        return product.Truncate();
+    }
 
     public static BigDecimal operator /(BigDecimal dividend, BigDecimal divisor)
     {
@@ -206,7 +212,8 @@ public struct BigDecimal
             exponentChange = 0;
         }
         dividend.Mantissa *= BigInteger.Pow(10, exponentChange);
-        return new BigDecimal(dividend.Mantissa / divisor.Mantissa, dividend.Exponent - divisor.Exponent - exponentChange);
+        BigDecimal quotient = new BigDecimal(dividend.Mantissa / divisor.Mantissa, dividend.Exponent - divisor.Exponent - exponentChange);
+        return quotient.Truncate();
     }
 		
     public static BigDecimal operator %(BigDecimal left, BigDecimal right)
@@ -273,7 +280,7 @@ public struct BigDecimal
             int bitLength = Convert.ToInt32(Math.Ceiling(BigInteger.Log(extendedMantissa, 2)));
             BigInteger root = BigInteger.One << (bitLength / 2);
 
-            while (!Utils.isSqrt(extendedMantissa, root))
+            while (!Utils.IsSqrt(extendedMantissa, root))
             {
                 root += extendedMantissa / root;
                 root /= 2;

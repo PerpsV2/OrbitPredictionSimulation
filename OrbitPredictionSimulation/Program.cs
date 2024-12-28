@@ -33,8 +33,8 @@ IInputContext input = window.CreateInput();
 
 Body sun = new Body(
     "Sun",
-    new BigDecimal(1989, 27), 
-    new BigDecimal(696340, 3), 
+    new ScientificDecimal(1.989m, 30), 
+    new ScientificDecimal(6.96340m, 8), 
     Vector2.Zero, 
     Vector2.Zero,
     0,
@@ -42,20 +42,20 @@ Body sun = new Body(
     );
 Body earth = new Body(
     "Earth",
-     BigDecimal.Create(5.97219m, 24), 
-    new BigDecimal(6378, 3), 
-    new Vector2(BigDecimal.Create(-1.1167278m,10), BigDecimal.Create(1.4670613m, 11)), 
-    new Vector2(BigDecimal.Create(-3.0195272m, 4), BigDecimal.Create(-2.3640870m, 3)),
+    new ScientificDecimal(5.97219m, 24), 
+    new ScientificDecimal(6.378m, 6), 
+    new Vector2(new ScientificDecimal(-1.1167278m,10), new ScientificDecimal(1.4670613m, 11)), 
+    new Vector2(new ScientificDecimal(-3.0195272m, 4), new ScientificDecimal(-2.3640870m, 3)),
     0,
     new SKColor(100, 200, 255, 255),
     sun
     );
 Body moon = new Body(
     "Moon",
-    BigDecimal.Create(7.349m, 22), 
-    new BigDecimal(1737, 3), 
-    new Vector2(BigDecimal.Create(3.85m,8), 0), 
-    new Vector2(0, BigDecimal.Create(1.022828m, 3)),
+    new ScientificDecimal(7.349m, 22), 
+    new ScientificDecimal(1.737m, 6), 
+    new Vector2(new ScientificDecimal(3.85m,8), 0), 
+    new Vector2(0, new ScientificDecimal(1.022828m, 3)),
     0,
     new SKColor(180, 180, 180, 255),
     earth
@@ -116,11 +116,9 @@ void CalculateOrbitScreenPoints(object sender, EventArgs e)
 camera.OnChange += CalculateOrbitScreenPoints;
 
 float angle = 0;
-int i = 0;
 void OnRender(double _)
 {
     angle += 0.01f;
-    ++i;
     //canvas.Scale(window.Size.X, window.Size.Y);
     grContext.ResetContext();
     canvas.Clear(SKColors.Black);
@@ -130,11 +128,10 @@ void OnRender(double _)
         if (body.Parent != null)
         {
             body.Position = body.CartesianDistanceAtAnomaly(angle);
-            if (i % 10 == 0) body.LogPosition();
+            body.LogPosition();
             body.DrawOrbitPath(drawOptions);
         }
-        if (tracking == body)
-            camera.GoToBody(body);
+        if (tracking == body) camera.GoToBody(body);
         body.Draw(drawOptions);
     }
     

@@ -2,15 +2,15 @@ namespace OrbitPredictionSimulation;
 
 public delegate void CameraEventHandler(object sender, EventArgs e);
 
-public class Camera(Vector2 position, BigDecimal width, BigDecimal height)
+public class Camera(Vector2 position, ScientificDecimal width, ScientificDecimal height)
 {
     public Vector2 Position { get; private set; } = position;
-    public BigDecimal Width { get; private set; } = width;
-    public BigDecimal Height { get; private set; } = height;
-    public BigDecimal Left => Position.X - Width / 2;
-    public BigDecimal Top => Position.Y - Height / 2;
-    public BigDecimal Right => Position.X + Width / 2;
-    public BigDecimal Bottom => Position.Y + Height / 2;
+    public ScientificDecimal Width { get; private set; } = width;
+    public ScientificDecimal Height { get; private set; } = height;
+    public ScientificDecimal Left => Position.X - Width / 2;
+    public ScientificDecimal Top => Position.Y - Height / 2;
+    public ScientificDecimal Right => Position.X + Width / 2;
+    public ScientificDecimal Bottom => Position.Y + Height / 2;
     public event CameraEventHandler? OnChange;
 
     public void MoveTo(Vector2 position)
