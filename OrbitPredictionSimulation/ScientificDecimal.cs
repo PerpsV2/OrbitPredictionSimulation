@@ -129,14 +129,10 @@ public struct ScientificDecimal
         => !(left == right);
 
     public static bool operator <(ScientificDecimal left, ScientificDecimal right) 
-        => left.Exponent > right.Exponent ? 
-            right.IncreaseExponent(left.Exponent).Mantissa < left.Mantissa :
-            left.IncreaseExponent(right.Exponent).Mantissa < right.Mantissa;
+        => left.Exponent == right.Exponent ? left.Mantissa < right.Mantissa : left.Exponent < right.Exponent;
     
     public static bool operator >(ScientificDecimal left, ScientificDecimal right)
-        => left.Exponent > right.Exponent ?
-            right.IncreaseExponent(left.Exponent).Mantissa > left.Mantissa :
-            left.IncreaseExponent(right.Exponent).Mantissa > right.Mantissa;
+        => left.Exponent == right.Exponent ? left.Mantissa > right.Mantissa : left.Exponent > right.Exponent;
     
     public static bool operator <=(ScientificDecimal left, ScientificDecimal right)
         => left < right || left == right;
@@ -150,6 +146,9 @@ public struct ScientificDecimal
         if (value.Exponent % 2 != 0) value = value.IncreaseExponent(value.Exponent + 1);
         return new ScientificDecimal(Utils.DecimalSqrt(value.Mantissa), value.Exponent / 2);
     }
+
+    public static ScientificDecimal Abs(ScientificDecimal value)
+        => new (Math.Abs(value.Mantissa), value.Exponent);   
     
     #endregion
     

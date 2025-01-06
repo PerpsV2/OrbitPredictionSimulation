@@ -16,8 +16,9 @@ public class OrbitPath(List<Vector2> points, SKColor color)
         List<SKPoint> screenPoints = new List<SKPoint>();
         Vector2 origin = Parent?.Position ?? Vector2.Zero;
         SKPoint? previousPoint = null;
-        foreach (Vector2 worldPoint in Points)
+        for (int i = 0; i < Points.Count; i++)
         {
+            Vector2 worldPoint = Points[i];
             SKPoint screenPoint = new SKPoint(
                 (float)((worldPoint.X - cam.Left + origin.X) / cam.Width) * options.ScreenSize.X, 
                 (float)((worldPoint.Y - cam.Top + origin.Y) / cam.Height) * options.ScreenSize.Y
