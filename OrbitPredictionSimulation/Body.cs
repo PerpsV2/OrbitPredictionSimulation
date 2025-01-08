@@ -2,7 +2,8 @@ using SkiaSharp;
 
 namespace OrbitPredictionSimulation;
 
-public class Body(string name, ScientificDecimal mass, ScientificDecimal radius, Vector2 position, Vector2 velocity, SKColor color)
+public class Body(string name, ScientificDecimal mass, ScientificDecimal radius, Vector2 position, Vector2 velocity, 
+    SKColor color)
 {
     private static readonly ScientificDecimal G = new(667430, -16);
     private const int MinimumRadius = 10;
@@ -17,14 +18,15 @@ public class Body(string name, ScientificDecimal mass, ScientificDecimal radius,
     public Vector2 AbsolutePosition => Position + (Parent?.AbsolutePosition ?? Vector2.Zero);
     
     // position of orbital path points
-    private Vector2 PathPosition => Position - (_parentBuffer != null && _unparentedMode ? _parentBuffer.AbsolutePosition : Vector2.Zero);
+    //private Vector2 PathPosition => 
+    //    Position - (_parentBuffer != null && _unparentedMode ? _parentBuffer.AbsolutePosition : Vector2.Zero);
     public Vector2 Velocity { get; set; } = velocity;
     public Vector2 AbsoluteVelocity => Velocity + (Parent?.AbsoluteVelocity ?? Vector2.Zero);
     public SKColor Color { get; set; } = color;
     public Body? Parent { get; private set; }
 
-    private readonly Body? _parentBuffer;
-    private bool _unparentedMode;
+    //private Body? _parentBuffer;
+    //private bool _unparentedMode;
     private readonly Vector2? _eccentricityVector;
     private readonly ScientificDecimal _eccentricity;
     private readonly double _periapsisTrueAnomaly;
@@ -38,7 +40,7 @@ public class Body(string name, ScientificDecimal mass, ScientificDecimal radius,
         SKColor color, Body? parent = null) 
         : this(name, mass, radius, position, velocity, color)
     {
-        _parentBuffer = parent;
+        //_parentBuffer = parent;
         if (parent == null) return;
         Parent = parent;
         _orbitPath.Parent = parent;
@@ -125,7 +127,7 @@ public class Body(string name, ScientificDecimal mass, ScientificDecimal radius,
         return Math.Atan2((double) y, (double) x) % Math.Tau;
     }
 
-    private Vector2 GetInstantGravitationalForce(Body attractor)
+    public Vector2 GetInstantGravitationalForce(Body attractor)
     {
         Vector2 difference = attractor.AbsolutePosition - AbsolutePosition;
         ScientificDecimal forceMagnitude = G * Mass * attractor.Mass / (difference.Magnitude() * difference.Magnitude());
@@ -133,7 +135,7 @@ public class Body(string name, ScientificDecimal mass, ScientificDecimal radius,
     }
     
     // if this instance appears inside the list of attractors, skip over it
-    private Vector2 GetInstantNetGravitationalForce(Body[] attractors)
+    public Vector2 GetInstantNetGravitationalForce(Body[] attractors)
     {
         Vector2 result = new Vector2(0, 0);
         return attractors
@@ -143,39 +145,44 @@ public class Body(string name, ScientificDecimal mass, ScientificDecimal radius,
 
     public Vector2 GetInstantAcceleration(Body[] attractors)
         => GetInstantNetGravitationalForce(attractors) / Mass;
-    
-    // unparented mode temporarily hides the parent for calculations while retaining it for the orbit path
+
     public void Unparent()
     {
         if (Parent == null) return;
-        _unparentedMode = true;
         Position = AbsolutePosition;
         Velocity = AbsoluteVelocity;
         Parent = null;
     }
 
-    public void Reparent()
+    public bool HasEscaped(Body? parent)
     {
-        if (_parentBuffer == null) return;
-        Parent = _parentBuffer;
-        Position -= Parent.AbsolutePosition;
-        Velocity -= Parent.AbsoluteVelocity;
+        if (parent == null) return false;
+        Vector2 relativePosition = AbsolutePosition - parent.AbsolutePosition;
+        Vector2 relativeVelocity = AbsoluteVelocity - parent.AbsoluteVelocity;
+        ScientificDecimal eccentricity = (
+            Vector2.CrossProduct(relativeVelocity, Vector2.CrossProduct(relativePosition, relativeVelocity)) / 
+            (parent.Mass * G) - relativePosition / relativePosition.Magnitude()
+            ).Magnitude();
+        if (eccentricity > 1) return true;
+        return false;
     }
-
+    
+    #region Orbit Path Methods
+    
     public void LogPosition()
-    {
-        _orbitPath.Points.Add(PathPosition);
-        if (_orbitPath.Points.Count > MaxPositions)
-            _orbitPath.Points.RemoveAt(0);
-    }
+        => _orbitPath.LogPosition(this, MaxPositions);
 
     public void DrawOrbitPath(DrawOptions options)
-    {
-        _orbitPath.Draw(options);
-    }
+        => _orbitPath.Draw(options);
 
     public void CalculateOrbitScreenPoints(DrawOptions options)
-    {
-        _orbitPath.CalculateScreenPoints(options);
-    }
+        => _orbitPath.CalculateScreenPoints(options);
+
+    public Body? GetOrbitPathParent()
+        => _orbitPath.Parent;
+
+    public void SetOrbitPathParent(Body? parent)
+        => _orbitPath.Parent = parent;
+
+    #endregion
 }

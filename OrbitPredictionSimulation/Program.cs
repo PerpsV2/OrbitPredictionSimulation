@@ -129,7 +129,7 @@ Body moon = new Body(
     earth
     );
 
-Body[] bodies = [sun, mercury, venus, earth, moon, mars, jupiter, saturn, uranus, neptune, pluto];
+Body[] bodies = [sun, earth, moon];
 Camera camera = new Camera(Vector2.Zero, Options.DefaultCamZoom, Options.DefaultCamZoom);
 
 int trackingIndex = 0;
@@ -192,11 +192,12 @@ void ApplyEulerMethod()
 {
     foreach (Body body in bodies)
     {
+        if (body.HasEscaped(body.GetOrbitPathParent()))
+            body.SetOrbitPathParent(body.GetOrbitPathParent()?.Parent ?? null);
         body.Velocity += body.GetInstantAcceleration(bodies) * timeStep * deltaTime;
         body.Position += body.Velocity * timeStep * deltaTime;
         body.LogPosition();
         body.CalculateOrbitScreenPoints(drawOptions);
-        body.DrawOrbitPath(drawOptions);
     }
     if (tracking != null) camera.SetOrigin(tracking.Position);
 }
@@ -213,7 +214,6 @@ void ApplyKeplerMethod()
                 body.LogPosition();
             }
             body.CalculateOrbitScreenPoints(drawOptions);
-            body.DrawOrbitPath(drawOptions);
         }
         if (tracking != null) camera.SetOrigin(tracking.AbsolutePosition);
     }
@@ -239,15 +239,27 @@ void OnRender(double _)
         case SimulationMethod.Kepler: ApplyKeplerMethod(); break;
         case SimulationMethod.RungaKutta4: ApplyRungeKuttaMethod(); break;
     }
-    
-    foreach(Body body in bodies) body.Draw(drawOptions);
+
+    foreach (Body body in bodies)
+    {
+        body.Draw(drawOptions);
+        body.DrawOrbitPath(drawOptions);
+    }
+
     HandleInput(input.Keyboards[0]);
     
     canvas.DrawText("Tracking: " + (tracking?.Name ?? "Nothing"), 20, 40, font, paint);
     canvas.DrawText("Time scale (s): " + timeStep, 20, 80, font, paint);
-    canvas.DrawText("Current date: " + new DateTime(2024, 12, 25).AddSeconds((double)time), 20, 120, font, paint);
+    try {
+        canvas.DrawText("Current date: " + new DateTime(2024, 12, 25).AddSeconds((double)time),
+            20, 120, font, paint);
+    }
+    catch (ArgumentOutOfRangeException) {
+        canvas.DrawText("Current date: >10000y A.D.", 20, 120, font, paint);
+    }
+
     if (tracking != null)
-        canvas.DrawText("Velocity: " + tracking.Velocity.Magnitude(), 20, 160, font, paint);
+        canvas.DrawText("Velocity (m/s): " + tracking.Velocity.Magnitude(), 20, 160, font, paint);
     
     canvas.Flush();
 }

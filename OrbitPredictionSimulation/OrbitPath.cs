@@ -10,6 +10,13 @@ public class OrbitPath(List<Vector2> points, SKColor color)
     private SKPoint[] _screenPoints = [];
     public SKColor Color { get; set; } = color;
     public Body? Parent { get; set; }
+
+    public void LogPosition(Body body, int maxPositions)
+    {
+        Points.Add(body.AbsolutePosition - (Parent?.AbsolutePosition ?? Vector2.Zero));
+        if (Points.Count > maxPositions)
+            Points.RemoveAt(0);
+    }
     
     public void CalculateScreenPoints(DrawOptions options)
     {
