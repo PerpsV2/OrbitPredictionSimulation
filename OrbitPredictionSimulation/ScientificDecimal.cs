@@ -10,6 +10,7 @@ public struct ScientificDecimal
     
     public decimal Mantissa { get; set; }
     public int Exponent { get; set; }
+    public bool Positive => decimal.IsPositive(Mantissa);
 
     public ScientificDecimal(decimal mantissa, int exponent)
         : this()
@@ -30,7 +31,7 @@ public struct ScientificDecimal
             return this;
         }
         
-        while (Math.Abs(Mantissa) > 10)
+        while (Math.Abs(Mantissa) >= 10)
         {
             Mantissa /= 10;
             Exponent++;
@@ -128,11 +129,23 @@ public struct ScientificDecimal
     public static bool operator !=(ScientificDecimal left, ScientificDecimal right) 
         => !(left == right);
 
-    public static bool operator <(ScientificDecimal left, ScientificDecimal right) 
-        => left.Exponent == right.Exponent ? left.Mantissa < right.Mantissa : left.Exponent < right.Exponent;
+    public static bool operator <(ScientificDecimal left, ScientificDecimal right)
+    {
+        if (left.Positive && !right.Positive) return false;
+        if (!left.Positive && right.Positive) return true;
+        bool result = left.Exponent == right.Exponent ? left.Mantissa < right.Mantissa : left.Exponent < right.Exponent;
+        if (left.Positive && right.Positive) return result;
+        return !result;
+    }
     
     public static bool operator >(ScientificDecimal left, ScientificDecimal right)
-        => left.Exponent == right.Exponent ? left.Mantissa > right.Mantissa : left.Exponent > right.Exponent;
+    {
+        if (left.Positive && !right.Positive) return true;
+        if (!left.Positive && right.Positive) return false;
+        bool result = left.Exponent == right.Exponent ? left.Mantissa > right.Mantissa : left.Exponent > right.Exponent;
+        if (left.Positive && right.Positive) return result;
+        return !result;
+    }
     
     public static bool operator <=(ScientificDecimal left, ScientificDecimal right)
         => left < right || left == right;

@@ -1,4 +1,5 @@
 using System.Net.Security;
+using System.Numerics;
 using SkiaSharp;
 
 namespace OrbitPredictionSimulation;
@@ -16,6 +17,7 @@ public class Body(string name, ScientificDecimal mass, ScientificDecimal radius,
     public Vector2 Position { get; set; } = position;
     public Vector2 AbsolutePosition => Position + (Parent?.AbsolutePosition ?? Vector2.Zero);
     public Vector2 Velocity { get; set; } = velocity;
+    public Vector2 AbsoluteVelocity => Velocity + (Parent?.AbsoluteVelocity ?? Vector2.Zero);
     public SKColor Color { get; set; } = color;
     public Body? Parent { get; }
     
@@ -24,7 +26,7 @@ public class Body(string name, ScientificDecimal mass, ScientificDecimal radius,
     private readonly double _periapsisTrueAnomaly;
     private readonly double _apoapsisTrueAnomaly;
     private readonly ScientificDecimal _specificAngularMomentum;
-    private readonly OrbitPath _orbitPath = new OrbitPath(new List<Vector2>(), color);
+    private readonly OrbitPath _orbitPath = new (new List<Vector2>(), color);
 
     private ScientificDecimal Mu => G * (Parent?? throw new NullReferenceException()).Mass;
 
@@ -88,7 +90,7 @@ public class Body(string name, ScientificDecimal mass, ScientificDecimal radius,
 
     public double MeanAnomaly(ScientificDecimal time)
     {
-        ScientificDecimal meanMotion = 2 * Math.PI / OrbitalPeriod();
+        ScientificDecimal meanMotion = Math.Tau / OrbitalPeriod();
         return (double)(time * meanMotion);
     }
 
@@ -112,6 +114,35 @@ public class Body(string name, ScientificDecimal mass, ScientificDecimal radius,
         ScientificDecimal x = Math.Cos(eccentricAnomaly) - _eccentricity;
         return Math.Atan2((double) y, (double) x) % Math.Tau;
     }
+
+    public Vector2 GetInstantGravitationalForce(Body attractor)
+    {
+        Vector2 difference = attractor.AbsolutePosition - AbsolutePosition;
+        ScientificDecimal forceMagnitude = G * Mass * attractor.Mass / (difference.Magnitude() * difference.Magnitude());
+        return Vector2.DirectionBetween(AbsolutePosition, attractor.AbsolutePosition) * forceMagnitude;
+    }
+    
+    // if this instance appears inside the list of attractors, skip over it
+    public Vector2 GetInstantNetGravitationalForce(Body[] attractors)
+    {
+        Vector2 result = new Vector2(0, 0);
+        foreach (Body attractor in attractors)
+        {
+            if (attractor == this) continue;
+            result += GetInstantGravitationalForce(attractor);
+        }
+
+        return result;
+    }
+
+    public Vector2 GetInstantAcceleration(Body[] attractors)
+        => GetInstantNetGravitationalForce(attractors) / Mass;
+
+    public void SetAbsolutePosition(Vector2 position)
+        => Position = Parent == null ? position : position - Parent.AbsolutePosition;
+
+    public void SetAbsoluteVelocity(Vector2 velocity)
+        => Velocity = Parent == null ? velocity : velocity - Parent.AbsoluteVelocity;
 
     public void LogPosition()
     {

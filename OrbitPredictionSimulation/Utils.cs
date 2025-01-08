@@ -2,6 +2,13 @@ using System.Numerics;
 
 namespace OrbitPredictionSimulation;
 
+public enum SimulationMethod
+{
+    Euler,
+    Kepler,
+    RungaKutta4
+}
+
 public static class Utils
 {
     public static bool IsSqrt(BigInteger n, BigInteger root)

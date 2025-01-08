@@ -39,6 +39,23 @@ public class Vector2(ScientificDecimal x, ScientificDecimal y)
     public static Vector2 CrossProduct(ScientificDecimal a, Vector2 b)
         => new (-a * b.Y, a * b.X);
 
+    public double PrincipalAngle()
+    {
+        double angle = Math.Atan((double)(Y / X));
+        if (X < 0 && Y > 0) return Math.PI + angle;
+        if (X < 0 && Y < 0) return Math.PI + angle;
+        if (X > 0 && Y < 0) return Math.Tau + angle;
+        return angle;
+    }
+    
+    // returns a normalized direction vector from one point to another
+    public static Vector2 DirectionBetween(Vector2 start, Vector2 end)
+    {
+        Vector2 difference = end - start;
+        double angle = difference.PrincipalAngle();
+        return new Vector2(Math.Cos(angle), Math.Sin(angle));
+    }
+
     public override string ToString()
         => "<" + X + ", " + Y + ">";
 }

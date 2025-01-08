@@ -54,7 +54,7 @@ Body venus = new Body(
     new ScientificDecimal(6.0518m, 6),
     new Vector2(new ScientificDecimal(8.099679m, 10), new ScientificDecimal(7.1657153m, 10)),
     new Vector2(new ScientificDecimal(-2.33109495m, 4), new ScientificDecimal(2.60801434m, 4)),
-    new SKColor(200, 200, 50, 255),
+    new SKColor(230, 160, 40, 255),
     sun
 );
 Body earth = new Body(
@@ -139,12 +139,11 @@ Body moon = new Body(
     new SKColor(180, 180, 180, 255),
     earth
     );
-List<Body> bodies = [sun, mercury, venus, earth, moon, mars, jupiter, saturn, uranus, neptune, pluto, sedna];
+Body[] bodies = [sun, earth];
 Camera camera = new Camera(Vector2.Zero, 100, 100);
 
 int trackingIndex = 0;
 Body? tracking = null;
-ScientificDecimal? trackingOrbitalPeriod = null;
 
 SKPaint blackPaint = new SKPaint
 {
@@ -171,16 +170,10 @@ void HandleKeyPresses(IKeyboard keyboard, Key key, int keyCode)
     if (key == Key.R || key == Key.F)
     {
         trackingIndex += key == Key.R ? 1 : -1;
-        if (trackingIndex < 0) trackingIndex = bodies.Count;
-        trackingIndex %= bodies.Count + 1;
-        tracking = trackingIndex >= bodies.Count ? null : bodies[trackingIndex];
-        trackingOrbitalPeriod = new ScientificDecimal();
-        if (tracking != null)
-        {
-            camera.GoToBody(tracking);
-            if (tracking.Parent != null)
-                trackingOrbitalPeriod = tracking.OrbitalPeriod();
-        }
+        if (trackingIndex < 0) trackingIndex = bodies.Length;
+        trackingIndex %= bodies.Length + 1;
+        tracking = trackingIndex >= bodies.Length ? null : bodies[trackingIndex];
+        if (tracking != null) camera.GoToBody(tracking);
     }
 
     if (key == Key.G) if (tracking != null) camera.GoToBody(tracking);
@@ -201,15 +194,20 @@ void HandleInput(IKeyboard keyboard)
     if (keyboard.IsKeyPressed(Key.E)) camera.ScaleZoom(0.95f);
 }
 
-void OnRender(double _)
+void ApplyEulerMethod()
 {
-    deltaTime = (DateTime.Now - previousTime).TotalSeconds;
-    previousTime = DateTime.Now;
-    time += deltaTime * timeStep;
-    //canvas.Scale(window.Size.X, window.Size.Y);
-    grContext.ResetContext();
-    canvas.Clear(SKColors.Black);
-    
+    foreach (Body body in bodies)
+    {
+        body.SetAbsoluteVelocity(body.AbsoluteVelocity + body.GetInstantAcceleration(bodies.ToArray()) * timeStep * deltaTime);
+        body.SetAbsolutePosition(body.AbsolutePosition + body.AbsoluteVelocity * timeStep * deltaTime);
+        body.LogPosition();
+        body.CalculateOrbitScreenPoints(drawOptions);
+        body.DrawOrbitPath(drawOptions);
+    }
+}
+
+void ApplyKeplerMethod()
+{
     foreach (Body body in bodies)
     {
         if (body.Parent != null)
@@ -224,16 +222,36 @@ void OnRender(double _)
         }
         if (tracking != null) camera.SetOrigin(tracking.AbsolutePosition);
     }
+}
+
+void ApplyRungeKuttaMethod() 
+{
+    
+}
+
+void OnRender(double _)
+{
+    grContext.ResetContext();
+    canvas.Clear(SKColors.Black);
+    
+    deltaTime = (DateTime.Now - previousTime).TotalSeconds;
+    previousTime = DateTime.Now;
+    time += deltaTime * timeStep;
+    
+    ApplyEulerMethod();
     
     foreach(Body body in bodies) body.Draw(drawOptions);
-    
     HandleInput(input.Keyboards[0]);
     
     canvas.DrawText("Tracking: " + (tracking?.Name ?? "Nothing"), 20, 40, font, blackPaint);
     canvas.DrawText("Time scale (s): " + timeStep, 20, 80, font, blackPaint);
     canvas.DrawText("Current date: " + new DateTime(2024, 12, 25).AddSeconds((double)time), 20, 120, font, blackPaint);
+    if (tracking != null)
+        canvas.DrawText("Velocity: " + tracking.Velocity.Magnitude(), 20, 160, font, blackPaint);
+    
     canvas.Flush();
 }
+
 window.Render += OnRender;
 
 window.Run();
