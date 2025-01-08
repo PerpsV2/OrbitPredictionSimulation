@@ -1,3 +1,5 @@
+using System.Globalization;
+
 namespace OrbitPredictionSimulation;
 
 /// <summary>
@@ -172,7 +174,10 @@ public struct ScientificDecimal
     
     public override string ToString()
     {
-        return Mantissa + "e" + Exponent.ToString("+0;-#");
+        string mantissaString = Mantissa.ToString(CultureInfo.InvariantCulture);
+        mantissaString = mantissaString.Substring(Positive ? 0 : 1, 
+            Math.Min(PrintPrecision + 1, mantissaString.Length));
+        return mantissaString + "e" + Exponent.ToString("+0;-#");
     }
 
     public int CompareTo(object? obj)
