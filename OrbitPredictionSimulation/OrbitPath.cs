@@ -5,6 +5,7 @@ namespace OrbitPredictionSimulation;
 
 public class OrbitPath(List<Vector2> points, SKColor color)
 {
+    private static readonly int PathWidth = 2;
     public List<Vector2> Points { get; set; } = points;
     private SKPoint[] _screenPoints = [];
     public SKColor Color { get; set; } = color;
@@ -36,7 +37,12 @@ public class OrbitPath(List<Vector2> points, SKColor color)
     
     public void Draw(DrawOptions options)
     {
-        SKPaint paint = new SKPaint { Color = new SKColor(Color.Red, Color.Green, Color.Blue, 125) };
+        SKPaint paint = new SKPaint
+        {
+            Color = new SKColor(Color.Red, Color.Green, Color.Blue, 125),
+            StrokeWidth = PathWidth,
+            IsAntialias = true
+        };
         options.Canvas.DrawPoints(SKPointMode.Lines, _screenPoints, paint);
     }
 }

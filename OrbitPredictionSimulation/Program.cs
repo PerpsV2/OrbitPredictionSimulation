@@ -28,7 +28,6 @@ var renderTarget = new GRBackendRenderTarget(800, 800, 0, 8,
     new GRGlFramebufferInfo(0, 0x8058)); // 0x8058 = GL_RGBA8`
 using SKSurface surface = SKSurface.Create(grContext, renderTarget, GRSurfaceOrigin.BottomLeft, SKColorType.Rgba8888);
 using SKCanvas canvas = surface.Canvas;
-
 IInputContext input = window.CreateInput();
 
 Body sun = new Body(
@@ -139,8 +138,9 @@ Body moon = new Body(
     new SKColor(180, 180, 180, 255),
     earth
     );
-Body[] bodies = [sun, earth];
-Camera camera = new Camera(Vector2.Zero, 100, 100);
+
+Body[] bodies = [sun, earth, moon];
+Camera camera = new Camera(Vector2.Zero, new ScientificDecimal(1m, 10), new ScientificDecimal(1m, 10));
 
 int trackingIndex = 0;
 Body? tracking = null;
@@ -164,6 +164,12 @@ ScientificDecimal time = 0;
 ScientificDecimal timeStep = new ScientificDecimal(1m, 0);
 ScientificDecimal deltaTime;
 DateTime previousTime = DateTime.Now;
+
+SimulationMethod simMethod = SimulationMethod.Kepler;
+
+if (simMethod == SimulationMethod.Euler)
+    foreach (var body in bodies)
+        body.Unparent();
 
 void HandleKeyPresses(IKeyboard keyboard, Key key, int keyCode)
 {
@@ -198,12 +204,13 @@ void ApplyEulerMethod()
 {
     foreach (Body body in bodies)
     {
-        body.SetAbsoluteVelocity(body.AbsoluteVelocity + body.GetInstantAcceleration(bodies.ToArray()) * timeStep * deltaTime);
-        body.SetAbsolutePosition(body.AbsolutePosition + body.AbsoluteVelocity * timeStep * deltaTime);
+        body.Velocity += body.GetInstantAcceleration(bodies) * timeStep * deltaTime;
+        body.Position += body.Velocity * timeStep * deltaTime;
         body.LogPosition();
         body.CalculateOrbitScreenPoints(drawOptions);
         body.DrawOrbitPath(drawOptions);
     }
+    if (tracking != null) camera.SetOrigin(tracking.Position);
 }
 
 void ApplyKeplerMethod()
@@ -237,8 +244,13 @@ void OnRender(double _)
     deltaTime = (DateTime.Now - previousTime).TotalSeconds;
     previousTime = DateTime.Now;
     time += deltaTime * timeStep;
-    
-    ApplyEulerMethod();
+
+    switch (simMethod)
+    {
+        case SimulationMethod.Euler: ApplyEulerMethod(); break;
+        case SimulationMethod.Kepler: ApplyKeplerMethod(); break;
+        case SimulationMethod.RungaKutta4: ApplyRungeKuttaMethod(); break;
+    }
     
     foreach(Body body in bodies) body.Draw(drawOptions);
     HandleInput(input.Keyboards[0]);

@@ -8,7 +8,8 @@ public class Body(string name, ScientificDecimal mass, ScientificDecimal radius,
 {
     private static readonly ScientificDecimal G = new(667430, -16);
     private const int MinimumRadius = 10;
-    private const int CrossSpokeSize = 5;
+    private const int CrossSpokeSize = 7;
+    private const int CrossSpokeWidth = 2;
     private const int MaxPositions = 1000;
 
     public string Name { get; set; } = name;
@@ -16,11 +17,16 @@ public class Body(string name, ScientificDecimal mass, ScientificDecimal radius,
     public ScientificDecimal Radius { get; set; } = radius;
     public Vector2 Position { get; set; } = position;
     public Vector2 AbsolutePosition => Position + (Parent?.AbsolutePosition ?? Vector2.Zero);
+    
+    // position of orbital path points
+    private Vector2 PathPosition => Position - (_parentBuffer != null && _unparentedMode ? _parentBuffer.AbsolutePosition : Vector2.Zero);
     public Vector2 Velocity { get; set; } = velocity;
     public Vector2 AbsoluteVelocity => Velocity + (Parent?.AbsoluteVelocity ?? Vector2.Zero);
     public SKColor Color { get; set; } = color;
-    public Body? Parent { get; }
-    
+    public Body? Parent { get; private set; }
+
+    private readonly Body? _parentBuffer;
+    private bool _unparentedMode = false;
     private readonly Vector2? _eccentricityVector;
     private readonly ScientificDecimal _eccentricity;
     private readonly double _periapsisTrueAnomaly;
@@ -34,6 +40,7 @@ public class Body(string name, ScientificDecimal mass, ScientificDecimal radius,
         SKColor color, Body? parent = null) 
         : this(name, mass, radius, position, velocity, color)
     {
+        _parentBuffer = parent;
         if (parent == null) return;
         Parent = parent;
         _orbitPath.Parent = parent;
@@ -50,7 +57,12 @@ public class Body(string name, ScientificDecimal mass, ScientificDecimal radius,
     
     public void Draw(DrawOptions options)
     {
-        SKPaint paint = new SKPaint { Color = Color };
+        SKPaint paint = new SKPaint
+        {
+            Color = Color,
+            StrokeWidth = CrossSpokeWidth,
+            IsAntialias = true
+        };
         Camera cam = options.Camera;
         SKCanvas canvas = options.Canvas;
         float bodyScreenX = (float)((AbsolutePosition.X - cam.Left) / (cam.Right - cam.Left)) * options.ScreenSize.X;
@@ -88,13 +100,13 @@ public class Body(string name, ScientificDecimal mass, ScientificDecimal radius,
         return ScientificDecimal.Sqrt(constant * semiMajorAxis * semiMajorAxis * semiMajorAxis);
     }
 
-    public double MeanAnomaly(ScientificDecimal time)
+    private double MeanAnomaly(ScientificDecimal time)
     {
         ScientificDecimal meanMotion = Math.Tau / OrbitalPeriod();
         return (double)(time * meanMotion);
     }
 
-    public double EccentricAnomaly(ScientificDecimal time)
+    private double EccentricAnomaly(ScientificDecimal time)
     {
         ScientificDecimal epsilon = new ScientificDecimal(1m, -2);
         ScientificDecimal meanAnomaly = MeanAnomaly(time);
@@ -115,7 +127,7 @@ public class Body(string name, ScientificDecimal mass, ScientificDecimal radius,
         return Math.Atan2((double) y, (double) x) % Math.Tau;
     }
 
-    public Vector2 GetInstantGravitationalForce(Body attractor)
+    private Vector2 GetInstantGravitationalForce(Body attractor)
     {
         Vector2 difference = attractor.AbsolutePosition - AbsolutePosition;
         ScientificDecimal forceMagnitude = G * Mass * attractor.Mass / (difference.Magnitude() * difference.Magnitude());
@@ -123,30 +135,38 @@ public class Body(string name, ScientificDecimal mass, ScientificDecimal radius,
     }
     
     // if this instance appears inside the list of attractors, skip over it
-    public Vector2 GetInstantNetGravitationalForce(Body[] attractors)
+    private Vector2 GetInstantNetGravitationalForce(Body[] attractors)
     {
         Vector2 result = new Vector2(0, 0);
-        foreach (Body attractor in attractors)
-        {
-            if (attractor == this) continue;
-            result += GetInstantGravitationalForce(attractor);
-        }
-
-        return result;
+        return attractors
+            .Where(attractor => attractor != this)
+            .Aggregate(result, (current, attractor) => current + GetInstantGravitationalForce(attractor));
     }
 
     public Vector2 GetInstantAcceleration(Body[] attractors)
         => GetInstantNetGravitationalForce(attractors) / Mass;
+    
+    // unparented mode temporarily hides the parent for calculations while retaining it for the orbit path
+    public void Unparent()
+    {
+        if (Parent == null) return;
+        _unparentedMode = true;
+        Position = AbsolutePosition;
+        Velocity = AbsoluteVelocity;
+        Parent = null;
+    }
 
-    public void SetAbsolutePosition(Vector2 position)
-        => Position = Parent == null ? position : position - Parent.AbsolutePosition;
-
-    public void SetAbsoluteVelocity(Vector2 velocity)
-        => Velocity = Parent == null ? velocity : velocity - Parent.AbsoluteVelocity;
+    public void Reparent()
+    {
+        if (_parentBuffer == null) return;
+        Parent = _parentBuffer;
+        Position -= Parent.AbsolutePosition;
+        Velocity -= Parent.AbsoluteVelocity;
+    }
 
     public void LogPosition()
     {
-        _orbitPath.Points.Add(Position);
+        _orbitPath.Points.Add(PathPosition);
         if (_orbitPath.Points.Count > MaxPositions)
             _orbitPath.Points.RemoveAt(0);
     }
