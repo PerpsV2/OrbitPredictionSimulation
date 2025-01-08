@@ -13,12 +13,17 @@ public struct ScientificDecimal
     public bool Positive => decimal.IsPositive(Mantissa);
 
     public ScientificDecimal(decimal mantissa, int exponent)
-        : this()
     {
         Mantissa = mantissa;
         Exponent = exponent;
         Normalize();
     }
+
+    public ScientificDecimal(int exponent)
+        : this(1m, exponent) {}
+
+    public ScientificDecimal()
+        : this(0, 0) {}
 
     /// <summary>
     /// Sets the largest non-zero digit of the mantissa to be in the ones place
@@ -167,7 +172,7 @@ public struct ScientificDecimal
     
     public override string ToString()
     {
-        return Mantissa + "e" + Exponent.ToString("+0;-#");;
+        return Mantissa + "e" + Exponent.ToString("+0;-#");
     }
 
     public int CompareTo(object? obj)

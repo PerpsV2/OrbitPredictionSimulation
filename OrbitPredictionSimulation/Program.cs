@@ -1,5 +1,4 @@
-﻿using System.Numerics;
-using OrbitPredictionSimulation;
+﻿using OrbitPredictionSimulation;
 using Silk.NET.Maths;
 using Silk.NET.Windowing;
 using Silk.NET.Windowing.Glfw;
@@ -120,15 +119,6 @@ Body pluto = new Body(
     new SKColor(200, 100, 200, 255),
     sun
     );
-Body sedna = new Body(
-    "Sedna",
-    new ScientificDecimal(2.2m, 21),
-    new ScientificDecimal(0.6m, 6),
-    new Vector2(new ScientificDecimal(6.0317233m, 12), new ScientificDecimal(-1.0598047m, 13)), 
-    new Vector2(new ScientificDecimal(-4.29328267m, 3), new ScientificDecimal(1.0710045m, 3)),
-    new SKColor(200, 100, 100, 255),
-    sun
-    );
 Body moon = new Body(
     "Moon",
     new ScientificDecimal(7.349m, 22), 
@@ -139,23 +129,23 @@ Body moon = new Body(
     earth
     );
 
-Body[] bodies = [sun, earth, moon];
-Camera camera = new Camera(Vector2.Zero, new ScientificDecimal(1m, 10), new ScientificDecimal(1m, 10));
+Body[] bodies = [sun, mercury, venus, earth, moon, mars, jupiter, saturn, uranus, neptune, pluto];
+Camera camera = new Camera(Vector2.Zero, Options.DefaultCamZoom, Options.DefaultCamZoom);
 
 int trackingIndex = 0;
 Body? tracking = null;
 
-SKPaint blackPaint = new SKPaint
+SKPaint paint = new SKPaint
 {
     Color = SKColors.White,
 };
-SKFont font = new SKFont()
+SKFont font = new SKFont
 {
-    Size = 20,
+    Size = Options.FontSize,
 };
 DrawOptions drawOptions = new DrawOptions(
     canvas,
-    blackPaint,
+    paint,
     camera,
     (window.Size.X, window.Size.Y)
 );
@@ -165,39 +155,37 @@ ScientificDecimal timeStep = new ScientificDecimal(1m, 0);
 ScientificDecimal deltaTime;
 DateTime previousTime = DateTime.Now;
 
-SimulationMethod simMethod = SimulationMethod.Kepler;
-
-if (simMethod == SimulationMethod.Euler)
+if (Options.SimMethod == SimulationMethod.Euler) 
     foreach (var body in bodies)
         body.Unparent();
 
 void HandleKeyPresses(IKeyboard keyboard, Key key, int keyCode)
 {
-    if (key == Key.R || key == Key.F)
+    if (key == Options.TrackNextKey || key == Options.TrackPreviousKey)
     {
-        trackingIndex += key == Key.R ? 1 : -1;
+        trackingIndex += key == Options.TrackNextKey ? 1 : -1;
         if (trackingIndex < 0) trackingIndex = bodies.Length;
         trackingIndex %= bodies.Length + 1;
         tracking = trackingIndex >= bodies.Length ? null : bodies[trackingIndex];
         if (tracking != null) camera.GoToBody(tracking);
     }
 
-    if (key == Key.G) if (tracking != null) camera.GoToBody(tracking);
+    if (key == Options.FocusTrackKey) if (tracking != null) camera.GoToBody(tracking);
 
-    if (key == Key.Comma) timeStep /= 10;
-    if (key == Key.Period) timeStep *= 10;
+    if (key == Options.TimeWarpDownKey) timeStep /= Options.TimeWarpIncrement;
+    if (key == Options.TimeWarpUpKey) timeStep *= Options.TimeWarpIncrement;
 }
 input.Keyboards[0].KeyDown += HandleKeyPresses;
 
 void HandleInput(IKeyboard keyboard)
 {
-    if (keyboard.IsKeyPressed(Key.W)) camera.MoveBy(new Vector2(0, camera.Height / -100));
-    if (keyboard.IsKeyPressed(Key.S)) camera.MoveBy(new Vector2(0, camera.Height / 100));
-    if (keyboard.IsKeyPressed(Key.A)) camera.MoveBy(new Vector2(camera.Height / -100, 0));
-    if (keyboard.IsKeyPressed(Key.D)) camera.MoveBy(new Vector2(camera.Height / 100, 0));
+    if (keyboard.IsKeyPressed(Options.MoveUpKey)) camera.MoveBy(new Vector2(0, camera.Height * -Options.CamMoveSpeed));
+    if (keyboard.IsKeyPressed(Options.MoveDownKey)) camera.MoveBy(new Vector2(0, camera.Height * Options.CamMoveSpeed));
+    if (keyboard.IsKeyPressed(Options.MoveLeftKey)) camera.MoveBy(new Vector2(camera.Height * -Options.CamMoveSpeed, 0));
+    if (keyboard.IsKeyPressed(Options.MoveRightKey)) camera.MoveBy(new Vector2(camera.Height * Options.CamMoveSpeed, 0));
     
-    if (keyboard.IsKeyPressed(Key.Q)) camera.ScaleZoom(1.05f);
-    if (keyboard.IsKeyPressed(Key.E)) camera.ScaleZoom(0.95f);
+    if (keyboard.IsKeyPressed(Options.ZoomOutKey)) camera.ScaleZoom(1 + Options.CamZoomSpeed);
+    if (keyboard.IsKeyPressed(Options.ZoomInKey)) camera.ScaleZoom(1 - Options.CamZoomSpeed);
 }
 
 void ApplyEulerMethod()
@@ -245,7 +233,7 @@ void OnRender(double _)
     previousTime = DateTime.Now;
     time += deltaTime * timeStep;
 
-    switch (simMethod)
+    switch (Options.SimMethod)
     {
         case SimulationMethod.Euler: ApplyEulerMethod(); break;
         case SimulationMethod.Kepler: ApplyKeplerMethod(); break;
@@ -255,11 +243,11 @@ void OnRender(double _)
     foreach(Body body in bodies) body.Draw(drawOptions);
     HandleInput(input.Keyboards[0]);
     
-    canvas.DrawText("Tracking: " + (tracking?.Name ?? "Nothing"), 20, 40, font, blackPaint);
-    canvas.DrawText("Time scale (s): " + timeStep, 20, 80, font, blackPaint);
-    canvas.DrawText("Current date: " + new DateTime(2024, 12, 25).AddSeconds((double)time), 20, 120, font, blackPaint);
+    canvas.DrawText("Tracking: " + (tracking?.Name ?? "Nothing"), 20, 40, font, paint);
+    canvas.DrawText("Time scale (s): " + timeStep, 20, 80, font, paint);
+    canvas.DrawText("Current date: " + new DateTime(2024, 12, 25).AddSeconds((double)time), 20, 120, font, paint);
     if (tracking != null)
-        canvas.DrawText("Velocity: " + tracking.Velocity.Magnitude(), 20, 160, font, blackPaint);
+        canvas.DrawText("Velocity: " + tracking.Velocity.Magnitude(), 20, 160, font, paint);
     
     canvas.Flush();
 }

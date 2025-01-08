@@ -1,5 +1,3 @@
-using System.Net.Security;
-using System.Numerics;
 using SkiaSharp;
 
 namespace OrbitPredictionSimulation;
@@ -26,7 +24,7 @@ public class Body(string name, ScientificDecimal mass, ScientificDecimal radius,
     public Body? Parent { get; private set; }
 
     private readonly Body? _parentBuffer;
-    private bool _unparentedMode = false;
+    private bool _unparentedMode;
     private readonly Vector2? _eccentricityVector;
     private readonly ScientificDecimal _eccentricity;
     private readonly double _periapsisTrueAnomaly;
