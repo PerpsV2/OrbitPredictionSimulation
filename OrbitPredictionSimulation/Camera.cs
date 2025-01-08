@@ -18,7 +18,7 @@ public class Camera(Vector2 position, ScientificDecimal width, ScientificDecimal
     
     public void MoveBy(Vector2 position) => _localPosition += position;
     
-    public void ScaleZoom(float scale)
+    public void ScaleZoom(ScientificDecimal scale)
     {
         Width *= scale;
         Height *= scale;

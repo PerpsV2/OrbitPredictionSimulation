@@ -4,14 +4,23 @@ namespace OrbitPredictionSimulation;
 
 public static class Options
 {
-    public static readonly SimulationMethod SimMethod = SimulationMethod.Euler;
+    public static readonly SimulationMethod SimMethod = SimulationMethod.Kepler;
     public static readonly (int width, int height) ScreenSize = (800, 800);
     public const int FontSize = 20;
+    
+    public const int ScientificPrintPrecision = 5;
+    
+    // Planet graphics options
+    public const int MinimumVisibleRadius = 10;
+    public const int CrossSpokeSize = 7;
+    public const int CrossSpokeWidth = 2;
+    public const int MaxOrbitPathPositions = 1000;
     
     // Camera options
     public static readonly ScientificDecimal DefaultCamZoom = new (8);
     public const float CamMoveSpeed = 0.01f;
     public const float CamZoomSpeed = 0.05f;
+    public const float FocusZoomRadiusMultiplier = 5f;
 
     public const int TimeWarpIncrement = 10;
     

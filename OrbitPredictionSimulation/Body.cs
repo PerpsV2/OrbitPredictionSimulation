@@ -6,10 +6,10 @@ public class Body(string name, ScientificDecimal mass, ScientificDecimal radius,
     SKColor color)
 {
     private static readonly ScientificDecimal G = new(667430, -16);
-    private const int MinimumRadius = 10;
-    private const int CrossSpokeSize = 7;
-    private const int CrossSpokeWidth = 2;
-    private const int MaxPositions = 1000;
+    private const int MinimumRadius = Options.MinimumVisibleRadius;
+    private const int CrossSpokeSize = Options.CrossSpokeSize;
+    private const int CrossSpokeWidth = Options.CrossSpokeWidth;
+    private const int MaxPositions = Options.MaxOrbitPathPositions;
 
     public string Name { get; set; } = name;
     public ScientificDecimal Mass { get; set; } = mass;

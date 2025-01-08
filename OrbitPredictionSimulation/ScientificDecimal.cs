@@ -8,7 +8,7 @@ namespace OrbitPredictionSimulation;
 public struct ScientificDecimal
     : IComparable, IComparable<ScientificDecimal>, IEquatable<ScientificDecimal>
 {
-    public const int PrintPrecision = 5;
+    private const int PrintPrecision = Options.ScientificPrintPrecision;
     
     public decimal Mantissa { get; set; }
     public int Exponent { get; set; }

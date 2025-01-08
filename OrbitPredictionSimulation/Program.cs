@@ -129,7 +129,7 @@ Body moon = new Body(
     earth
     );
 
-Body[] bodies = [sun, earth, moon];
+Body[] bodies = [sun, mercury, venus, earth, moon, mars, jupiter, saturn, uranus, neptune, pluto];
 Camera camera = new Camera(Vector2.Zero, Options.DefaultCamZoom, Options.DefaultCamZoom);
 
 int trackingIndex = 0;
@@ -169,8 +169,12 @@ void HandleKeyPresses(IKeyboard keyboard, Key key, int keyCode)
         tracking = trackingIndex >= bodies.Length ? null : bodies[trackingIndex];
         if (tracking != null) camera.GoToBody(tracking);
     }
-
-    if (key == Options.FocusTrackKey) if (tracking != null) camera.GoToBody(tracking);
+    
+    if (key == Options.FocusTrackKey && tracking != null)
+    {
+        camera.GoToBody(tracking);
+        camera.ScaleZoom(tracking.Radius * Options.FocusZoomRadiusMultiplier / camera.Width);
+    }
 
     if (key == Options.TimeWarpDownKey) timeStep /= Options.TimeWarpIncrement;
     if (key == Options.TimeWarpUpKey) timeStep *= Options.TimeWarpIncrement;
@@ -192,14 +196,17 @@ void ApplyEulerMethod()
 {
     foreach (Body body in bodies)
     {
+        body.LogPosition();
+        body.CalculateOrbitScreenPoints(drawOptions);
+    }
+    
+    foreach (Body body in bodies)
+    {
         if (body.HasEscaped(body.GetOrbitPathParent()))
             body.SetOrbitPathParent(body.GetOrbitPathParent()?.Parent ?? null);
         body.Velocity += body.GetInstantAcceleration(bodies) * timeStep * deltaTime;
         body.Position += body.Velocity * timeStep * deltaTime;
-        body.LogPosition();
-        body.CalculateOrbitScreenPoints(drawOptions);
     }
-    if (tracking != null) camera.SetOrigin(tracking.Position);
 }
 
 void ApplyKeplerMethod()
@@ -208,15 +215,15 @@ void ApplyKeplerMethod()
     {
         if (body.Parent != null)
         {
-            body.Position = body.CartesianDistanceAtAnomaly(body.TrueAnomaly(time));
-            if (timeStep * deltaTime < body.OrbitalPeriod() / 15 && timeStep * deltaTime > body.OrbitalPeriod() / 3000)
-            {
+            if (timeStep * deltaTime < body.OrbitalPeriod() / 15 && 
+                timeStep * deltaTime > body.OrbitalPeriod() / 3000)
                 body.LogPosition();
-            }
             body.CalculateOrbitScreenPoints(drawOptions);
         }
-        if (tracking != null) camera.SetOrigin(tracking.AbsolutePosition);
     }
+    
+    foreach (Body body in bodies)
+        if (body.Parent != null) body.Position = body.CartesianDistanceAtAnomaly(body.TrueAnomaly(time));
 }
 
 void ApplyRungeKuttaMethod() 
@@ -232,18 +239,20 @@ void OnRender(double _)
     deltaTime = (DateTime.Now - previousTime).TotalSeconds;
     previousTime = DateTime.Now;
     time += deltaTime * timeStep;
+    
+    if (tracking != null) camera.SetOrigin(tracking.AbsolutePosition);
+    
+    foreach (Body body in bodies)
+    {
+        body.Draw(drawOptions);
+        body.DrawOrbitPath(drawOptions);
+    }
 
     switch (Options.SimMethod)
     {
         case SimulationMethod.Euler: ApplyEulerMethod(); break;
         case SimulationMethod.Kepler: ApplyKeplerMethod(); break;
         case SimulationMethod.RungaKutta4: ApplyRungeKuttaMethod(); break;
-    }
-
-    foreach (Body body in bodies)
-    {
-        body.Draw(drawOptions);
-        body.DrawOrbitPath(drawOptions);
     }
 
     HandleInput(input.Keyboards[0]);
