@@ -9,7 +9,7 @@ using Vector2 = OrbitPredictionSimulation.Vector2;
 
 WindowOptions options = WindowOptions.Default with
 {
-    Size = new Vector2D<int>(800, 800),
+    Size = new Vector2D<int>(Options.ScreenSize.width, Options.ScreenSize.height),
     Title = "Orbit Prediction Simulation",
     PreferredStencilBufferBits = 8,
     PreferredBitDepth = new Vector4D<int>(8, 8, 8, 8),
@@ -23,8 +23,8 @@ using GRGlInterface grGlInterface = GRGlInterface.Create(
     name => window.GLContext!.TryGetProcAddress(name, out var addr) ? addr : 0);
 grGlInterface.Validate();
 using GRContext grContext = GRContext.CreateGl(grGlInterface);
-var renderTarget = new GRBackendRenderTarget(800, 800, 0, 8, 
-    new GRGlFramebufferInfo(0, 0x8058)); // 0x8058 = GL_RGBA8`
+var renderTarget = new GRBackendRenderTarget(Options.ScreenSize.width, Options.ScreenSize.height, 0, 
+    8, new GRGlFramebufferInfo(0, 0x8058)); // 0x8058 = GL_RGBA8`
 using SKSurface surface = SKSurface.Create(grContext, renderTarget, GRSurfaceOrigin.BottomLeft, SKColorType.Rgba8888);
 using SKCanvas canvas = surface.Canvas;
 IInputContext input = window.CreateInput();

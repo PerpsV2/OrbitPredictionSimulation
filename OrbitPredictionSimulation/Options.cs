@@ -4,7 +4,8 @@ namespace OrbitPredictionSimulation;
 
 public static class Options
 {
-    public const SimulationMethod SimMethod = SimulationMethod.Euler;
+    public const SimulationMethod SimMethod = SimulationMethod.Kepler;
+    public static readonly (int width, int height) ScreenSize = (1200, 1200);
     public const int FontSize = 20;
     
     // Camera options
