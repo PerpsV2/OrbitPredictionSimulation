@@ -3,9 +3,9 @@ using SKPoint = SkiaSharp.SKPoint;
 
 namespace OrbitPredictionSimulation;
 
-public class OrbitPath(List<Vector2> points, SKColor color)
+public class OrbitPath(List<Vector2?> points, SKColor color)
 {
-    private static readonly int PathWidth = 2;
+    private static readonly int PathWidth = Options.OrbitPathWidth;
     public List<Vector2?> Points { get; set; } = points;
     private SKPoint[] _screenPoints = [];
     public SKColor Color { get; set; } = color;
@@ -21,30 +21,32 @@ public class OrbitPath(List<Vector2> points, SKColor color)
     public void CalculateScreenPoints(DrawOptions options)
     {
         Camera cam = options.Camera;
-        List<SKPoint> screenPoints = new List<SKPoint>();
         Vector2 origin = Parent?.Position ?? Vector2.Zero;
         SKPoint? previousPoint = null;
-        for (int i = 0; i < Points.Count; i++)
+        List<SKPoint> screenPoints = new List<SKPoint>();
+        foreach (var worldPoint in Points)
         {
-            Vector2? worldPoint = Points[i];
-            SKPoint? potentialScreenPoint = worldPoint != null ? new SKPoint(
-                (float)((worldPoint.X - cam.Left + origin.X) / cam.Width) * options.ScreenSize.X, 
-                (float)((worldPoint.Y - cam.Top + origin.Y) / cam.Height) * options.ScreenSize.Y
+            SKPoint? screenPoint = worldPoint != null ? new SKPoint(
+                (float)((worldPoint.Value.X - cam.Left + origin.X) / cam.Width) * options.ScreenSize.X, 
+                (float)((worldPoint.Value.Y - cam.Top + origin.Y) / cam.Height) * options.ScreenSize.Y
             ) : null;
-            if (potentialScreenPoint == null)
+            
+            if (screenPoint == null)
             {
                 previousPoint = null;
                 continue;
             }
-            SKPoint screenPoint = potentialScreenPoint.Value;
-            if (screenPoint.X > 0 && screenPoint.X <= options.ScreenSize.X &&
-                screenPoint.Y > 0 && screenPoint.Y <= options.ScreenSize.Y)
+            
+            if (screenPoint.Value.X > 0 && screenPoint.Value.X <= options.ScreenSize.X &&
+                screenPoint.Value.Y > 0 && screenPoint.Value.Y <= options.ScreenSize.Y)
             {
-                screenPoints.Add(screenPoint);
-                screenPoints.Add(previousPoint ?? screenPoint);
+                screenPoints.Add(screenPoint.Value);
+                screenPoints.Add(previousPoint ?? screenPoint.Value);
             }
-            previousPoint = new SKPoint(screenPoint.X, screenPoint.Y);
+            
+            previousPoint = new SKPoint(screenPoint.Value.X, screenPoint.Value.Y);
         }
+
         _screenPoints = screenPoints.ToArray();
     }
     
@@ -63,15 +65,16 @@ public class OrbitPath(List<Vector2> points, SKColor color)
     {
         if (Points.Count < 2) return null;
         if (Points[^2] == null || Points[^1] == null) return null;
-        return Vector2.AngleBetween(Points[^2]!, Points[^1]!);
+        return Vector2.AngleBetween(Points[^2]!.Value, Points[^1]!.Value);
     }
     
     public double? GetTrajectoryPathAngularDeviation(Vector2 futureLocation)
     {
         if (Points.Count < 2) return null;
         if (Points[^1] == null) return null;
-        double angle = Vector2.AngleBetween(Points[^1]!, futureLocation);
+        double angle = Vector2.AngleBetween(Points[^1]!.Value, futureLocation);
         double? latestPathHeading = GetLatestPathHeading();
-        return latestPathHeading == null ? null : Math.Abs((double)(angle - latestPathHeading));
+        Console.WriteLine((angle, latestPathHeading));
+        return latestPathHeading == null ? null : Math.Abs((double)(angle - latestPathHeading) % Math.Tau);
     }
 }

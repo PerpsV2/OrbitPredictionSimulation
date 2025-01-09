@@ -21,13 +21,14 @@ public class Body(string name, ScientificDecimal mass, ScientificDecimal radius,
     public Vector2 AbsoluteVelocity => Velocity + (Parent?.AbsoluteVelocity ?? Vector2.Zero);
     public SKColor Color { get; set; } = color;
     public Body? Parent { get; private set; }
-    
+
+    private double _lastLoggedAngle;
     private readonly Vector2? _eccentricityVector;
     private readonly ScientificDecimal _eccentricity;
     private readonly double _periapsisTrueAnomaly;
     private readonly double _apoapsisTrueAnomaly;
     private readonly ScientificDecimal _specificAngularMomentum;
-    private readonly OrbitPath _orbitPath = new (new List<Vector2>(), color);
+    private readonly OrbitPath _orbitPath = new (new List<Vector2?>(), color);
 
     private ScientificDecimal Mu => G * (Parent?? throw new NullReferenceException()).Mass;
 
@@ -40,12 +41,12 @@ public class Body(string name, ScientificDecimal mass, ScientificDecimal radius,
         _orbitPath.Parent = parent;
         _eccentricityVector = Vector2.CrossProduct(Velocity, Vector2.CrossProduct(Position, Velocity)) / Mu -
                               Position / Position.Magnitude();
-        _eccentricity = _eccentricityVector.Magnitude();
-        _periapsisTrueAnomaly = Math.Atan((double)(_eccentricityVector.Y / _eccentricityVector.X));
+        _eccentricity = _eccentricityVector.Value.Magnitude();
+        _periapsisTrueAnomaly = Math.Atan((double)(_eccentricityVector.Value.Y / _eccentricityVector.Value.X));
         _apoapsisTrueAnomaly = _periapsisTrueAnomaly + Math.PI;
-        if (_eccentricityVector.X < 0 && _eccentricityVector.Y > 0) _periapsisTrueAnomaly = Math.PI - _periapsisTrueAnomaly;
-        if (_eccentricityVector.X < 0 && _eccentricityVector.Y < 0) _periapsisTrueAnomaly += Math.PI;
-        if (_eccentricityVector.X > 0 && _eccentricityVector.Y < 0) _periapsisTrueAnomaly += Math.PI;
+        if (_eccentricityVector.Value.X < 0 && _eccentricityVector.Value.Y > 0) _periapsisTrueAnomaly = Math.PI - _periapsisTrueAnomaly;
+        if (_eccentricityVector.Value.X < 0 && _eccentricityVector.Value.Y < 0) _periapsisTrueAnomaly += Math.PI;
+        if (_eccentricityVector.Value.X > 0 && _eccentricityVector.Value.Y < 0) _periapsisTrueAnomaly += Math.PI;
         _specificAngularMomentum = Vector2.CrossProduct(Position, Velocity);
     }
     
@@ -76,7 +77,7 @@ public class Body(string name, ScientificDecimal mass, ScientificDecimal radius,
     {
         if (_eccentricityVector == null) throw new NullReferenceException();
         ScientificDecimal constant = _specificAngularMomentum * _specificAngularMomentum / Mu;
-        return constant / (1 + _eccentricityVector.Magnitude() * Math.Cos(angle - _periapsisTrueAnomaly));
+        return constant / (1 + _eccentricityVector.Value.Magnitude() * Math.Cos(angle - _periapsisTrueAnomaly));
     }
 
     public Vector2 CartesianDistanceAtAnomaly(double angle)
@@ -166,7 +167,10 @@ public class Body(string name, ScientificDecimal mass, ScientificDecimal radius,
         => _orbitPath.LogPosition(this, MaxPositions);
 
     public void LogNullPosition()
-        => _orbitPath.Points.Add(null);
+    {
+        if (_orbitPath.Points.Count < 1) _orbitPath.Points.Add(null);
+        else if (_orbitPath.Points[^1] != null) _orbitPath.Points.Add(null);
+    }
 
     public void DrawOrbitPath(DrawOptions options)
         => _orbitPath.Draw(options);
@@ -186,6 +190,21 @@ public class Body(string name, ScientificDecimal mass, ScientificDecimal radius,
     // Return the positive difference in angle between a future heading and the orbit paths latest heading
     public double? GetTrajectoryPathAngularDeviation(Vector2 futureLocation)
         => _orbitPath.GetTrajectoryPathAngularDeviation(futureLocation);
+
+    public double GetTrajectoryAngle(Vector2 futureLocation)
+    {
+        return Vector2.AngleBetween(Position, futureLocation);
+    }
+
+    public void LogTrajectory(Vector2 futureLocation)
+    {
+        _lastLoggedAngle = GetTrajectoryAngle(futureLocation);
+    }
+
+    public double GetAngularDeviationSinceLastLoggedPosition(Vector2 futureLocation)
+    {
+        return Math.Abs((GetTrajectoryAngle(futureLocation) - _lastLoggedAngle) % Math.Tau);
+    }
 
     #endregion
 }

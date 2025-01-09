@@ -199,11 +199,17 @@ void ApplyEulerMethod()
         bool logPositionThisFrame = true;
         Body? orbitPathParent = body.GetOrbitPathParent();
         if (orbitPathParent != null)
+        {
             if (body.IsOrbiting(orbitPathParent))
-                if (body.GetTrajectoryPathAngularDeviation(
-                        body.Position + body.Velocity * timeStep * deltaTime) 
-                    is < Math.Tau / Options.MaxEulerOrbitPoints) 
+            {
+                Vector2 futurePosition = body.Position + body.Velocity * timeStep * deltaTime;
+                if (body.GetAngularDeviationSinceLastLoggedPosition(futurePosition) <
+                    Math.Tau / Options.MaxEulerOrbitPoints)
                     logPositionThisFrame = false;
+                else body.LogTrajectory(futurePosition);
+            }
+        }
+
         if (logPositionThisFrame) body.LogPosition();
         body.CalculateOrbitScreenPoints(drawOptions);
     }
@@ -220,24 +226,6 @@ void ApplyEulerMethod()
     }
 }
 
-void ApplyKeplerMethod()
-{
-    foreach (Body body in bodies)
-    {
-        if (body.Parent != null)
-        {
-            if (timeStep * deltaTime < body.OrbitalPeriod() / Options.MinKeplerOrbitPoints && 
-                timeStep * deltaTime > body.OrbitalPeriod() / Options.MaxKeplerOrbitPoints)
-                body.LogPosition();
-            else body.LogNullPosition();
-            body.CalculateOrbitScreenPoints(drawOptions);
-        }
-    }
-    
-    foreach (Body body in bodies)
-        if (body.Parent != null) body.Position = body.CartesianDistanceAtAnomaly(body.TrueAnomaly(time));
-}
-
 void ApplyVelocityVerletMethod() 
 {
     foreach (Body body in bodies)
@@ -245,11 +233,15 @@ void ApplyVelocityVerletMethod()
         bool logPositionThisFrame = true;
         Body? orbitPathParent = body.GetOrbitPathParent();
         if (orbitPathParent != null)
+        {
             if (body.IsOrbiting(orbitPathParent))
-                if (body.GetTrajectoryPathAngularDeviation(
-                        body.Position + body.Velocity * timeStep * deltaTime) 
-                    is < Math.Tau / Options.MaxEulerOrbitPoints) 
+            {
+                Vector2 futurePosition = body.Position + body.Velocity * timeStep * deltaTime;
+                if (body.GetAngularDeviationSinceLastLoggedPosition(futurePosition) < Math.Tau / Options.MaxVerletOrbitPoints)
                     logPositionThisFrame = false;
+                else body.LogTrajectory(futurePosition);
+            }
+        }
         if (logPositionThisFrame) body.LogPosition();
         body.CalculateOrbitScreenPoints(drawOptions);
     }
@@ -278,6 +270,34 @@ void ApplyVelocityVerletMethod()
 
     for (int i = 0; i < bodies.Length; ++i)
         bodies[i].Velocity += (accelerations1[i] + accelerations2[i]) * 0.5f * dt;
+}
+
+void ApplyKeplerMethod()
+{
+    foreach (Body body in bodies)
+    {
+        bool logPositionThisFrame = true;
+        if (body.Parent != null)
+        {
+            Vector2 futurePosition = body.CartesianDistanceAtAnomaly(body.TrueAnomaly(time) + 0.1f);
+            if (body.GetAngularDeviationSinceLastLoggedPosition(futurePosition) <
+                Math.Tau / Options.MaxKeplerOrbitPoints)
+                logPositionThisFrame = false;
+            else body.LogTrajectory(futurePosition);
+            
+            if (logPositionThisFrame)
+            {
+                if (timeStep * deltaTime < body.OrbitalPeriod() / Options.MinKeplerOrbitPoints)
+                    body.LogPosition();
+                else body.LogNullPosition();
+            }
+            
+            body.CalculateOrbitScreenPoints(drawOptions);
+        }
+    }
+    
+    foreach (Body body in bodies)
+        if (body.Parent != null) body.Position = body.CartesianDistanceAtAnomaly(body.TrueAnomaly(time));
 }
 
 void OnRender(double _)

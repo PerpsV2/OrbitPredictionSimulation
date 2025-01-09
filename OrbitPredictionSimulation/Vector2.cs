@@ -1,6 +1,6 @@
 namespace OrbitPredictionSimulation;
 
-public class Vector2(ScientificDecimal x, ScientificDecimal y)
+public struct Vector2(ScientificDecimal x, ScientificDecimal y)
 {
     public static Vector2 Zero => new(0, 0);
     public ScientificDecimal X { get; set; } = x;
@@ -8,8 +8,9 @@ public class Vector2(ScientificDecimal x, ScientificDecimal y)
 
     public static Vector2 operator -(Vector2 a) => new Vector2(-a.X, -a.Y);
     
-    public static Vector2 operator +(Vector2 a, Vector2 b) 
-        => new (a.X + b.X, a.Y + b.Y);
+    public static Vector2 operator +(Vector2 a, Vector2 b)
+        => new(a.X + b.X, a.Y + b.Y);
+    
 
     public static Vector2 operator -(Vector2 a, Vector2 b)
         => a + -b;
