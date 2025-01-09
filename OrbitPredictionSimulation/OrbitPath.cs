@@ -60,21 +60,4 @@ public class OrbitPath(List<Vector2?> points, SKColor color)
         };
         options.Canvas.DrawPoints(SKPointMode.Lines, _screenPoints, paint);
     }
-
-    public double? GetLatestPathHeading()
-    {
-        if (Points.Count < 2) return null;
-        if (Points[^2] == null || Points[^1] == null) return null;
-        return Vector2.AngleBetween(Points[^2]!.Value, Points[^1]!.Value);
-    }
-    
-    public double? GetTrajectoryPathAngularDeviation(Vector2 futureLocation)
-    {
-        if (Points.Count < 2) return null;
-        if (Points[^1] == null) return null;
-        double angle = Vector2.AngleBetween(Points[^1]!.Value, futureLocation);
-        double? latestPathHeading = GetLatestPathHeading();
-        Console.WriteLine((angle, latestPathHeading));
-        return latestPathHeading == null ? null : Math.Abs((double)(angle - latestPathHeading) % Math.Tau);
-    }
 }

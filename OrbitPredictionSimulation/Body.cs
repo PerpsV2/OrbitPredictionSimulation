@@ -187,10 +187,6 @@ public class Body(string name, ScientificDecimal mass, ScientificDecimal radius,
         LogNullPosition();
     }
 
-    // Return the positive difference in angle between a future heading and the orbit paths latest heading
-    public double? GetTrajectoryPathAngularDeviation(Vector2 futureLocation)
-        => _orbitPath.GetTrajectoryPathAngularDeviation(futureLocation);
-
     public double GetTrajectoryAngle(Vector2 futureLocation)
     {
         return Vector2.AngleBetween(Position, futureLocation);
