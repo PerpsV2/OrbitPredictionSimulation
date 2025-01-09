@@ -155,7 +155,7 @@ ScientificDecimal timeStep = new ScientificDecimal(1m, 0);
 ScientificDecimal deltaTime;
 DateTime previousTime = DateTime.Now;
 
-if (Options.SimMethod == SimulationMethod.Euler) 
+if (Options.SimMethod == SimulationMethod.Euler || Options.SimMethod == SimulationMethod.VelocityVerlet) 
     foreach (var body in bodies)
         body.Unparent();
 
@@ -238,9 +238,46 @@ void ApplyKeplerMethod()
         if (body.Parent != null) body.Position = body.CartesianDistanceAtAnomaly(body.TrueAnomaly(time));
 }
 
-void ApplyRungeKuttaMethod() 
+void ApplyVelocityVerletMethod() 
 {
+    foreach (Body body in bodies)
+    {
+        bool logPositionThisFrame = true;
+        Body? orbitPathParent = body.GetOrbitPathParent();
+        if (orbitPathParent != null)
+            if (body.IsOrbiting(orbitPathParent))
+                if (body.GetTrajectoryPathAngularDeviation(
+                        body.Position + body.Velocity * timeStep * deltaTime) 
+                    is < Math.Tau / Options.MaxEulerOrbitPoints) 
+                    logPositionThisFrame = false;
+        if (logPositionThisFrame) body.LogPosition();
+        body.CalculateOrbitScreenPoints(drawOptions);
+    }
+
+    foreach (Body body in bodies)
+    {
+        Body? orbitPathParent = body.GetOrbitPathParent();
+        if (orbitPathParent != null)
+            if (!body.IsOrbiting(orbitPathParent))
+                body.SetOrbitPathParent(body.GetOrbitPathParent()?.GetOrbitPathParent() ?? null);
+    }
+
+    ScientificDecimal dt = timeStep * deltaTime;
     
+    Vector2[] accelerations1 = new Vector2[bodies.Length];
+    Vector2[] accelerations2 = new Vector2[bodies.Length];
+    
+    for(int i = 0; i < bodies.Length; ++i)
+        accelerations1[i] = bodies[i].GetInstantAcceleration(bodies);
+    
+    for (int i = 0; i < bodies.Length; ++i)
+        bodies[i].Position += bodies[i].Velocity * dt + accelerations1[i] * 0.5f * dt * dt;
+    
+    for (int i = 0; i < bodies.Length; ++i)
+        accelerations2[i] = bodies[i].GetInstantAcceleration(bodies);
+
+    for (int i = 0; i < bodies.Length; ++i)
+        bodies[i].Velocity += (accelerations1[i] + accelerations2[i]) * 0.5f * dt;
 }
 
 void OnRender(double _)
@@ -259,7 +296,7 @@ void OnRender(double _)
     {
         case SimulationMethod.Euler: ApplyEulerMethod(); break;
         case SimulationMethod.Kepler: ApplyKeplerMethod(); break;
-        case SimulationMethod.RungaKutta4: ApplyRungeKuttaMethod(); break;
+        case SimulationMethod.VelocityVerlet: ApplyVelocityVerletMethod(); break;
     }
     
     if (tracking != null) camera.SetOrigin(tracking.AbsolutePosition);

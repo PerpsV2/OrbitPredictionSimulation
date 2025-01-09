@@ -6,7 +6,7 @@ public enum SimulationMethod
 {
     Euler,
     Kepler,
-    RungaKutta4
+    VelocityVerlet
 }
 
 public static class Utils
