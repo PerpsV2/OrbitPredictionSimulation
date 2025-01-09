@@ -47,12 +47,17 @@ public class Vector2(ScientificDecimal x, ScientificDecimal y)
         if (X > 0 && Y < 0) return Math.Tau + angle;
         return angle;
     }
-    
-    // returns a normalized direction vector from one point to another
-    public static Vector2 DirectionBetween(Vector2 start, Vector2 end)
+
+    public static double AngleBetween(Vector2 start, Vector2 end)
     {
         Vector2 difference = end - start;
-        double angle = difference.PrincipalAngle();
+        return difference.PrincipalAngle();
+    }
+    
+    // returns a normalized direction vector from one point to another
+    public static Vector2 DirectionVectorBetween(Vector2 start, Vector2 end)
+    {
+        double angle = AngleBetween(start, end);
         return new Vector2(Math.Cos(angle), Math.Sin(angle));
     }
 

@@ -196,14 +196,25 @@ void ApplyEulerMethod()
 {
     foreach (Body body in bodies)
     {
-        body.LogPosition();
+        bool logPositionThisFrame = true;
+        Body? orbitPathParent = body.GetOrbitPathParent();
+        if (orbitPathParent != null)
+            if (body.IsOrbiting(orbitPathParent))
+                if (body.GetTrajectoryPathAngularDeviation(
+                        body.Position + body.Velocity * timeStep * deltaTime) 
+                    is < Math.Tau / Options.MaxEulerOrbitPoints) 
+                    logPositionThisFrame = false;
+        if (logPositionThisFrame) body.LogPosition();
         body.CalculateOrbitScreenPoints(drawOptions);
     }
     
     foreach (Body body in bodies)
     {
-        if (body.HasEscaped(body.GetOrbitPathParent()))
-            body.SetOrbitPathParent(body.GetOrbitPathParent()?.Parent ?? null);
+        Body? orbitPathParent = body.GetOrbitPathParent();
+        if (orbitPathParent != null)
+            if (!body.IsOrbiting(orbitPathParent))
+                body.SetOrbitPathParent(body.GetOrbitPathParent()?.GetOrbitPathParent() ?? null);
+
         body.Velocity += body.GetInstantAcceleration(bodies) * timeStep * deltaTime;
         body.Position += body.Velocity * timeStep * deltaTime;
     }
@@ -215,9 +226,10 @@ void ApplyKeplerMethod()
     {
         if (body.Parent != null)
         {
-            if (timeStep * deltaTime < body.OrbitalPeriod() / 15 && 
-                timeStep * deltaTime > body.OrbitalPeriod() / 3000)
+            if (timeStep * deltaTime < body.OrbitalPeriod() / Options.MinKeplerOrbitPoints && 
+                timeStep * deltaTime > body.OrbitalPeriod() / Options.MaxKeplerOrbitPoints)
                 body.LogPosition();
+            else body.LogNullPosition();
             body.CalculateOrbitScreenPoints(drawOptions);
         }
     }
@@ -236,24 +248,23 @@ void OnRender(double _)
     grContext.ResetContext();
     canvas.Clear(SKColors.Black);
     
+    // increment time
     deltaTime = (DateTime.Now - previousTime).TotalSeconds;
     previousTime = DateTime.Now;
     time += deltaTime * timeStep;
     
-    if (tracking != null) camera.SetOrigin(tracking.AbsolutePosition);
+    foreach (Body body in bodies) body.Draw(drawOptions);
     
-    foreach (Body body in bodies)
-    {
-        body.Draw(drawOptions);
-        body.DrawOrbitPath(drawOptions);
-    }
-
     switch (Options.SimMethod)
     {
         case SimulationMethod.Euler: ApplyEulerMethod(); break;
         case SimulationMethod.Kepler: ApplyKeplerMethod(); break;
         case SimulationMethod.RungaKutta4: ApplyRungeKuttaMethod(); break;
     }
+    
+    if (tracking != null) camera.SetOrigin(tracking.AbsolutePosition);
+    
+    foreach(Body body in bodies) body.DrawOrbitPath(drawOptions);
 
     HandleInput(input.Keyboards[0]);
     
@@ -267,7 +278,7 @@ void OnRender(double _)
         canvas.DrawText("Current date: >10000y A.D.", 20, 120, font, paint);
     }
 
-    if (tracking != null)
+    if (tracking != null && Options.SimMethod == SimulationMethod.Euler)
         canvas.DrawText("Velocity (m/s): " + tracking.Velocity.Magnitude(), 20, 160, font, paint);
     
     canvas.Flush();

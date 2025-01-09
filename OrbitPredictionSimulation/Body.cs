@@ -17,16 +17,11 @@ public class Body(string name, ScientificDecimal mass, ScientificDecimal radius,
     public Vector2 Position { get; set; } = position;
     public Vector2 AbsolutePosition => Position + (Parent?.AbsolutePosition ?? Vector2.Zero);
     
-    // position of orbital path points
-    //private Vector2 PathPosition => 
-    //    Position - (_parentBuffer != null && _unparentedMode ? _parentBuffer.AbsolutePosition : Vector2.Zero);
     public Vector2 Velocity { get; set; } = velocity;
     public Vector2 AbsoluteVelocity => Velocity + (Parent?.AbsoluteVelocity ?? Vector2.Zero);
     public SKColor Color { get; set; } = color;
     public Body? Parent { get; private set; }
-
-    //private Body? _parentBuffer;
-    //private bool _unparentedMode;
+    
     private readonly Vector2? _eccentricityVector;
     private readonly ScientificDecimal _eccentricity;
     private readonly double _periapsisTrueAnomaly;
@@ -40,7 +35,6 @@ public class Body(string name, ScientificDecimal mass, ScientificDecimal radius,
         SKColor color, Body? parent = null) 
         : this(name, mass, radius, position, velocity, color)
     {
-        //_parentBuffer = parent;
         if (parent == null) return;
         Parent = parent;
         _orbitPath.Parent = parent;
@@ -131,7 +125,7 @@ public class Body(string name, ScientificDecimal mass, ScientificDecimal radius,
     {
         Vector2 difference = attractor.AbsolutePosition - AbsolutePosition;
         ScientificDecimal forceMagnitude = G * Mass * attractor.Mass / (difference.Magnitude() * difference.Magnitude());
-        return Vector2.DirectionBetween(AbsolutePosition, attractor.AbsolutePosition) * forceMagnitude;
+        return Vector2.DirectionVectorBetween(AbsolutePosition, attractor.AbsolutePosition) * forceMagnitude;
     }
     
     // if this instance appears inside the list of attractors, skip over it
@@ -153,24 +147,26 @@ public class Body(string name, ScientificDecimal mass, ScientificDecimal radius,
         Velocity = AbsoluteVelocity;
         Parent = null;
     }
-
-    public bool HasEscaped(Body? parent)
+    
+    public bool IsOrbiting(Body parent)
     {
-        if (parent == null) return false;
         Vector2 relativePosition = AbsolutePosition - parent.AbsolutePosition;
         Vector2 relativeVelocity = AbsoluteVelocity - parent.AbsoluteVelocity;
         ScientificDecimal eccentricity = (
             Vector2.CrossProduct(relativeVelocity, Vector2.CrossProduct(relativePosition, relativeVelocity)) / 
             (parent.Mass * G) - relativePosition / relativePosition.Magnitude()
-            ).Magnitude();
-        if (eccentricity > 1) return true;
-        return false;
+        ).Magnitude();
+        if (eccentricity > 1) return false;
+        return true;
     }
     
     #region Orbit Path Methods
     
     public void LogPosition()
         => _orbitPath.LogPosition(this, MaxPositions);
+
+    public void LogNullPosition()
+        => _orbitPath.Points.Add(null);
 
     public void DrawOrbitPath(DrawOptions options)
         => _orbitPath.Draw(options);
@@ -182,7 +178,14 @@ public class Body(string name, ScientificDecimal mass, ScientificDecimal radius,
         => _orbitPath.Parent;
 
     public void SetOrbitPathParent(Body? parent)
-        => _orbitPath.Parent = parent;
+    {
+        _orbitPath.Parent = parent;
+        LogNullPosition();
+    }
+
+    // Return the positive difference in angle between a future heading and the orbit paths latest heading
+    public double? GetTrajectoryPathAngularDeviation(Vector2 futureLocation)
+        => _orbitPath.GetTrajectoryPathAngularDeviation(futureLocation);
 
     #endregion
 }

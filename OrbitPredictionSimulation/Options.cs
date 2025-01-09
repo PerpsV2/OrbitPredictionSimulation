@@ -4,7 +4,7 @@ namespace OrbitPredictionSimulation;
 
 public static class Options
 {
-    public static readonly SimulationMethod SimMethod = SimulationMethod.Kepler;
+    public static readonly SimulationMethod SimMethod = SimulationMethod.Euler;
     public static readonly (int width, int height) ScreenSize = (800, 800);
     public const int FontSize = 20;
     
@@ -15,6 +15,14 @@ public static class Options
     public const int CrossSpokeSize = 7;
     public const int CrossSpokeWidth = 2;
     public const int MaxOrbitPathPositions = 1000;
+    
+    // This only affects bodies which are in an elliptic trajectory
+    public const float MaxEulerOrbitPoints = 20;
+    
+    // If the number of orbital points lies outside of these bounds,
+    // orbital lines for that body will no longer be updated
+    public const int MinKeplerOrbitPoints = 20;
+    public const int MaxKeplerOrbitPoints = 3000;
     
     // Camera options
     public static readonly ScientificDecimal DefaultCamZoom = new (8);
