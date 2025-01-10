@@ -26,7 +26,7 @@ public class Camera(Vector2 position, ScientificDecimal width, ScientificDecimal
     
     public void GoToBody(Body body)
     {
-        SetOrigin(body.AbsolutePosition);
+        SetOrigin(body.Position);
         MoveTo(Vector2.Zero);
     }
     

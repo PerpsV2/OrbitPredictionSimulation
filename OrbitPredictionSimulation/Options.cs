@@ -4,10 +4,13 @@ namespace OrbitPredictionSimulation;
 
 public static class Options
 {
-    public static readonly SimulationMethod SimMethod = SimulationMethod.Kepler;
+    // Simulation options
+    public static readonly SimulationMethod SimMethod = SimulationMethod.VelocityVerlet;
+    public const bool CorrectOrbitalEnergyDrift = true;
+    
+    // Window graphics options
     public static readonly (int width, int height) ScreenSize = (800, 800);
     public const int FontSize = 20;
-    
     public const int ScientificPrintPrecision = 5;
     
     // Planet graphics options
@@ -18,8 +21,7 @@ public static class Options
     public const int OrbitPathWidth = 2;
     
     // These only affects bodies which are in an elliptic trajectory
-    public const float MaxEulerOrbitPoints = 100;
-    public const float MaxVerletOrbitPoints = 100;
+    public const float MaxIntegratorOrbitPoints = 100;
     public const int MaxKeplerOrbitPoints = 100;
     
     // If the number of orbital points lies outside of this bound,

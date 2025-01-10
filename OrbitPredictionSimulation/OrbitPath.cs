@@ -13,7 +13,7 @@ public class OrbitPath(List<Vector2?> points, SKColor color)
 
     public void LogPosition(Body body, int maxPositions)
     {
-        Points.Add(body.AbsolutePosition - (Parent?.AbsolutePosition ?? Vector2.Zero));
+        Points.Add(body.Position - (Parent?.Position ?? Vector2.Zero));
         if (Points.Count > maxPositions)
             Points.RemoveAt(0);
     }
@@ -21,7 +21,7 @@ public class OrbitPath(List<Vector2?> points, SKColor color)
     public void CalculateScreenPoints(DrawOptions options)
     {
         Camera cam = options.Camera;
-        Vector2 origin = Parent?.Position ?? Vector2.Zero;
+        Vector2 origin = Parent?.RelativePosition ?? Vector2.Zero;
         SKPoint? previousPoint = null;
         List<SKPoint> screenPoints = new List<SKPoint>();
         foreach (var worldPoint in Points)

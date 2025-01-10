@@ -155,10 +155,6 @@ ScientificDecimal timeStep = new ScientificDecimal(1m, 0);
 ScientificDecimal deltaTime;
 DateTime previousTime = DateTime.Now;
 
-if (Options.SimMethod == SimulationMethod.Euler || Options.SimMethod == SimulationMethod.VelocityVerlet) 
-    foreach (var body in bodies)
-        body.Unparent();
-
 void HandleKeyPresses(IKeyboard keyboard, Key key, int keyCode)
 {
     if (key == Options.TrackNextKey || key == Options.TrackPreviousKey)
@@ -192,72 +188,21 @@ void HandleInput(IKeyboard keyboard)
     if (keyboard.IsKeyPressed(Options.ZoomInKey)) camera.ScaleZoom(1 - Options.CamZoomSpeed);
 }
 
-void ApplyEulerMethod()
+void EulerMethod()
 {
     foreach (Body body in bodies)
     {
-        bool logPositionThisFrame = true;
-        Body? orbitPathParent = body.GetOrbitPathParent();
-        if (orbitPathParent != null)
-        {
-            if (body.IsOrbiting(orbitPathParent))
-            {
-                Vector2 futurePosition = body.Position + body.Velocity * timeStep * deltaTime;
-                if (body.GetAngularDeviationSinceLastLoggedPosition(futurePosition) <
-                    Math.Tau / Options.MaxEulerOrbitPoints)
-                    logPositionThisFrame = false;
-                else body.LogTrajectory(futurePosition);
-            }
-        }
-
-        if (logPositionThisFrame) body.LogPosition();
-        body.CalculateOrbitScreenPoints(drawOptions);
-    }
-
-    foreach (Body body in bodies)
-    {
-        Body? orbitPathParent = body.GetOrbitPathParent();
-        if (orbitPathParent != null)
-            if (!body.IsOrbiting(orbitPathParent))
-                body.SetOrbitPathParent(body.GetOrbitPathParent()?.GetOrbitPathParent() ?? null);
+        if (body.Parent != null)
+            if (!body.IsInOrbit())
+                body.SetParent(body.Parent.Parent);
 
         body.Velocity += body.GetInstantAcceleration(bodies) * timeStep * deltaTime;
         body.Position += body.Velocity * timeStep * deltaTime;
     }
-    
-    foreach (Body body in bodies) 
-        if (body.GetOrbitPathParent() != null)
-            body.ResetSpecificOrbitalEnergy(body.GetOrbitPathParent()!);
 }
 
-void ApplyVelocityVerletMethod() 
+void VelocityVerletMethod() 
 {
-    foreach (Body body in bodies)
-    {
-        bool logPositionThisFrame = true;
-        Body? orbitPathParent = body.GetOrbitPathParent();
-        if (orbitPathParent != null)
-        {
-            if (body.IsOrbiting(orbitPathParent))
-            {
-                Vector2 futurePosition = body.Position + body.Velocity * timeStep * deltaTime;
-                if (body.GetAngularDeviationSinceLastLoggedPosition(futurePosition) < Math.Tau / Options.MaxVerletOrbitPoints)
-                    logPositionThisFrame = false;
-                else body.LogTrajectory(futurePosition);
-            }
-        }
-        if (logPositionThisFrame) body.LogPosition();
-        body.CalculateOrbitScreenPoints(drawOptions);
-    }
-
-    foreach (Body body in bodies)
-    {
-        Body? orbitPathParent = body.GetOrbitPathParent();
-        if (orbitPathParent != null)
-            if (!body.IsOrbiting(orbitPathParent))
-                body.SetOrbitPathParent(body.GetOrbitPathParent()?.GetOrbitPathParent() ?? null);
-    }
-
     ScientificDecimal dt = timeStep * deltaTime;
     
     Vector2[] accelerations1 = new Vector2[bodies.Length];
@@ -274,10 +219,113 @@ void ApplyVelocityVerletMethod()
 
     for (int i = 0; i < bodies.Length; ++i)
         bodies[i].Velocity += (accelerations1[i] + accelerations2[i]) * 0.5f * dt;
+}
+
+void LeapfrogMethod() 
+{
+    ScientificDecimal dt = timeStep * deltaTime;
+    
+    Vector2[] accelerations1 = new Vector2[bodies.Length];
+    Vector2[] accelerations2 = new Vector2[bodies.Length];
+
+    for (int i = 0; i < bodies.Length; ++i)
+        accelerations1[i] = bodies[i].GetInstantAcceleration(bodies);
+    
+    for (int i = 0; i < bodies.Length; ++i)
+        bodies[i].Position += bodies[i].Velocity * dt + accelerations1[i] * 0.5f * dt * dt;
+
+    for (int i = 0; i < bodies.Length; ++i)
+        accelerations2[i] = bodies[i].GetInstantAcceleration(bodies);
+    
+    for (int i = 0; i < bodies.Length; ++i)
+        bodies[i].Velocity += (accelerations1[i] + accelerations2[i]) * 0.5f * dt;
+}
+
+void RungeKutta4Method() 
+{
+    ScientificDecimal dt = timeStep * deltaTime;
+
+    Vector2[] positionK1 = new Vector2[bodies.Length];
+    Vector2[] positionK2 = new Vector2[bodies.Length];
+    Vector2[] positionK3 = new Vector2[bodies.Length];
+    Vector2[] positionK4 = new Vector2[bodies.Length];
+    Vector2[] velocityK1 = new Vector2[bodies.Length];
+    Vector2[] velocityK2 = new Vector2[bodies.Length];
+    Vector2[] velocityK3 = new Vector2[bodies.Length];
+    Vector2[] velocityK4 = new Vector2[bodies.Length];
+    Vector2[] accelerations1 = new Vector2[bodies.Length];
+    Vector2[] accelerations2 = new Vector2[bodies.Length];
+    Body[] tempBodies = new Body[bodies.Length];
+
+    for (int i = 0; i < bodies.Length; ++i)
+    {
+        Body body = bodies[i];
+        tempBodies[i] = new Body(body.Name, body.Mass, body.Radius, body.Position, body.Velocity, body.Color,
+            body.Parent);
+    }
+    
+    for (int i = 0; i < bodies.Length; ++i)
+    {
+        accelerations1[i] = bodies[i].GetInstantAcceleration(bodies);
+        velocityK1[i] = accelerations1[i] * dt;
+        positionK1[i] = bodies[i].Velocity * dt;
+
+        tempBodies[i].Position = bodies[i].Position + positionK1[i] * 0.5f;
+        tempBodies[i].Velocity = bodies[i].Velocity + velocityK1[i] * 0.5f;
+        accelerations2[i] = tempBodies[i].GetInstantAcceleration(tempBodies);
+
+        velocityK2[i] = accelerations2[i] * dt;
+        positionK2[i] = tempBodies[i].Velocity * dt;
+
+        tempBodies[i].Position = bodies[i].Position + positionK2[i] * 0.5f;
+        tempBodies[i].Velocity = bodies[i].Velocity + velocityK2[i] * 0.5f;
+        accelerations2[i] = tempBodies[i].GetInstantAcceleration(tempBodies);
+
+        velocityK3[i] = accelerations2[i] * dt;
+        positionK3[i] = tempBodies[i].Velocity * dt;
+
+        tempBodies[i].Position = bodies[i].Position + positionK3[i];
+        tempBodies[i].Velocity = bodies[i].Velocity + velocityK3[i];
+        accelerations2[i] = tempBodies[i].GetInstantAcceleration(tempBodies);
+
+        velocityK4[i] = accelerations2[i] * dt;
+        positionK4[i] = tempBodies[i].Velocity * dt;
+
+        bodies[i].Velocity += (velocityK1[i] + velocityK2[i] * 2 + velocityK3[i] * 2 + velocityK4[i]) * (1f / 6f);
+        bodies[i].Position += (positionK1[i] + positionK2[i] * 2 + positionK3[i] * 2 + positionK4[i]) * (1f / 6f);
+    }
+}
+
+void ApplyIntegratorStep(Action integrator)
+{
+    foreach (Body body in bodies)
+    {
+        bool logPositionThisFrame = true;
+        if (body.Parent != null)
+        {
+            if (body.IsInOrbit())
+            {
+                Vector2 futurePosition = body.Position + body.Velocity * timeStep * deltaTime;
+                if (body.GetAngularDeviationSinceLastLoggedPosition(futurePosition) < 
+                    Math.Tau / Options.MaxIntegratorOrbitPoints)
+                    logPositionThisFrame = false;
+                else body.LogTrajectory(futurePosition);
+            }
+        }
+        if (logPositionThisFrame) body.LogPosition();
+        body.CalculateOrbitScreenPoints(drawOptions);
+    }
+
+    foreach (Body body in bodies)
+        if (body.Parent != null)
+            if (!body.IsInOrbit())
+                body.SetParent(body.Parent.Parent);
+
+    integrator();
     
     foreach (Body body in bodies) 
-        if (body.GetOrbitPathParent() != null)
-            body.ResetSpecificOrbitalEnergy(body.GetOrbitPathParent()!);
+        if (body.Parent != null)
+            body.ResetSpecificOrbitalEnergy();
 }
 
 void ApplyKeplerMethod()
@@ -304,8 +352,10 @@ void ApplyKeplerMethod()
         }
     }
     
-    foreach (Body body in bodies)
-        if (body.Parent != null) body.Position = body.CartesianDistanceAtAnomaly(body.TrueAnomaly(time));
+    if (Options.CorrectOrbitalEnergyDrift)
+        foreach (Body body in bodies)
+            if (body.Parent != null) 
+                body.SetRelativePosition(body.CartesianDistanceAtAnomaly(body.TrueAnomaly(time)));
 }
 
 void OnRender(double _)
@@ -322,29 +372,32 @@ void OnRender(double _)
     
     switch (Options.SimMethod)
     {
-        case SimulationMethod.Euler: ApplyEulerMethod(); break;
+        case SimulationMethod.Euler: ApplyIntegratorStep(EulerMethod); break;
+        case SimulationMethod.VelocityVerlet: ApplyIntegratorStep(VelocityVerletMethod); break;
+        case SimulationMethod.Leapfrog: ApplyIntegratorStep(LeapfrogMethod); break;
+        case SimulationMethod.RungeKutta4: ApplyIntegratorStep(RungeKutta4Method); break;
         case SimulationMethod.Kepler: ApplyKeplerMethod(); break;
-        case SimulationMethod.VelocityVerlet: ApplyVelocityVerletMethod(); break;
     }
     
-    if (tracking != null) camera.SetOrigin(tracking.AbsolutePosition);
+    if (tracking != null) camera.SetOrigin(tracking.Position);
     
     foreach(Body body in bodies) body.DrawOrbitPath(drawOptions);
 
     HandleInput(input.Keyboards[0]);
     
-    canvas.DrawText("Tracking: " + (tracking?.Name ?? "Nothing"), 20, 40, font, paint);
-    canvas.DrawText("Time scale (s): " + timeStep, 20, 80, font, paint);
+    canvas.DrawText("Simulation Method: " + Options.SimMethod, 20, 40, font, paint);
+    canvas.DrawText("Tracking: " + (tracking?.Name ?? "Nothing"), 20, 80, font, paint);
+    canvas.DrawText("Time scale (s): " + timeStep, 20, 120, font, paint);
     try {
         canvas.DrawText("Current date: " + new DateTime(2024, 12, 25).AddSeconds((double)time),
-            20, 120, font, paint);
+            20, 160, font, paint);
     }
     catch (ArgumentOutOfRangeException) {
-        canvas.DrawText("Current date: >10000y A.D.", 20, 120, font, paint);
+        canvas.DrawText("Current date: >10000y A.D.", 20, 160, font, paint);
     }
 
-    if (tracking != null && Options.SimMethod == SimulationMethod.Euler)
-        canvas.DrawText("Velocity (m/s): " + tracking.Velocity.Magnitude(), 20, 160, font, paint);
+    if (tracking != null && Options.SimMethod != SimulationMethod.Kepler)
+        canvas.DrawText("Velocity (m/s): " + tracking.RelativeVelocity.Magnitude(), 20, 200, font, paint);
     
     canvas.Flush();
 }
