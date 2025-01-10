@@ -13,14 +13,6 @@ public enum SimulationMethod
 
 public static class Utils
 {
-    public static bool IsSqrt(BigInteger n, BigInteger root)
-    {
-        BigInteger lowerBound = root * root;
-        BigInteger upperBound = (root + 1) * (root + 1);
-        
-        return n >= lowerBound && n <= upperBound;
-    }
-    
     public static decimal DecimalSqrt(decimal x, decimal epsilon = 0.0M)
     {
         if (x < 0) throw new OverflowException("Cannot calculate square root from a negative number");

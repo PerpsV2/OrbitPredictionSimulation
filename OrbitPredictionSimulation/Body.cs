@@ -31,7 +31,7 @@ public class Body(string name, ScientificDecimal mass, ScientificDecimal radius,
     private double _apoapsisTrueAnomaly;
     private ScientificDecimal _specificAngularMomentum;
     private ScientificDecimal _specificOrbitalEnergy;
-    private OrbitPath _orbitPath = new (new List<Vector2?>(), color);
+    private readonly OrbitPath _orbitPath = new (new List<Vector2?>(), color);
 
     private ScientificDecimal Mu => G * (Parent?? throw new NullReferenceException()).Mass;
 
@@ -57,7 +57,6 @@ public class Body(string name, ScientificDecimal mass, ScientificDecimal radius,
         Velocity += parent.Velocity;
         _orbitPath.Parent = parent;
         CalculateInitials();
-        Console.WriteLine(Name + " " + _specificOrbitalEnergy);
     }
     
     public void Draw(DrawOptions options)
