@@ -224,6 +224,10 @@ void ApplyEulerMethod()
         body.Velocity += body.GetInstantAcceleration(bodies) * timeStep * deltaTime;
         body.Position += body.Velocity * timeStep * deltaTime;
     }
+    
+    foreach (Body body in bodies) 
+        if (body.GetOrbitPathParent() != null)
+            body.ResetSpecificOrbitalEnergy(body.GetOrbitPathParent()!);
 }
 
 void ApplyVelocityVerletMethod() 
@@ -259,7 +263,7 @@ void ApplyVelocityVerletMethod()
     Vector2[] accelerations1 = new Vector2[bodies.Length];
     Vector2[] accelerations2 = new Vector2[bodies.Length];
     
-    for(int i = 0; i < bodies.Length; ++i)
+    for (int i = 0; i < bodies.Length; ++i)
         accelerations1[i] = bodies[i].GetInstantAcceleration(bodies);
     
     for (int i = 0; i < bodies.Length; ++i)
@@ -271,7 +275,9 @@ void ApplyVelocityVerletMethod()
     for (int i = 0; i < bodies.Length; ++i)
         bodies[i].Velocity += (accelerations1[i] + accelerations2[i]) * 0.5f * dt;
     
-    
+    foreach (Body body in bodies) 
+        if (body.GetOrbitPathParent() != null)
+            body.ResetSpecificOrbitalEnergy(body.GetOrbitPathParent()!);
 }
 
 void ApplyKeplerMethod()
@@ -320,8 +326,6 @@ void OnRender(double _)
         case SimulationMethod.Kepler: ApplyKeplerMethod(); break;
         case SimulationMethod.VelocityVerlet: ApplyVelocityVerletMethod(); break;
     }
-    
-    Console.WriteLine("Earth: " + earth.GetSpecificOrbitalEnergy(sun));
     
     if (tracking != null) camera.SetOrigin(tracking.AbsolutePosition);
     

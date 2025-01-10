@@ -4,7 +4,7 @@ namespace OrbitPredictionSimulation;
 
 public static class Options
 {
-    public static readonly SimulationMethod SimMethod = SimulationMethod.VelocityVerlet;
+    public static readonly SimulationMethod SimMethod = SimulationMethod.Kepler;
     public static readonly (int width, int height) ScreenSize = (800, 800);
     public const int FontSize = 20;
     

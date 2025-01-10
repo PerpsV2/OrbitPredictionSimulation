@@ -43,14 +43,12 @@ public class Body(string name, ScientificDecimal mass, ScientificDecimal radius,
         _eccentricityVector = Vector2.CrossProduct(Velocity, Vector2.CrossProduct(Position, Velocity)) / Mu -
                               Position / Position.Magnitude();
         _eccentricity = _eccentricityVector.Value.Magnitude();
-        _periapsisTrueAnomaly = Math.Atan((double)(_eccentricityVector.Value.Y / _eccentricityVector.Value.X));
+        _periapsisTrueAnomaly = _eccentricityVector.Value.PrincipalAngle();
         _apoapsisTrueAnomaly = _periapsisTrueAnomaly + Math.PI;
-        if (_eccentricityVector.Value.X < 0 && _eccentricityVector.Value.Y > 0) _periapsisTrueAnomaly = Math.PI - _periapsisTrueAnomaly;
-        if (_eccentricityVector.Value.X < 0 && _eccentricityVector.Value.Y < 0) _periapsisTrueAnomaly += Math.PI;
-        if (_eccentricityVector.Value.X > 0 && _eccentricityVector.Value.Y < 0) _periapsisTrueAnomaly += Math.PI;
         _specificAngularMomentum = Vector2.CrossProduct(Position, Velocity);
-        _specificOrbitalEnergy = -0.5f * (Mu * Mu) / (_specificAngularMomentum * _specificAngularMomentum) *
-                                 (1 - _eccentricity * _eccentricity);
+        _specificOrbitalEnergy = Velocity.Magnitude() * Velocity.Magnitude() * 0.5f - Mu / Position.Magnitude();
+        
+        Console.WriteLine(Name + " " + _eccentricity);
     }
     
     public void Draw(DrawOptions options)
@@ -168,16 +166,17 @@ public class Body(string name, ScientificDecimal mass, ScientificDecimal radius,
 
     public ScientificDecimal GetSpecificOrbitalEnergy(Body parent)
     {
-        Vector2 relativePosition = AbsolutePosition - parent.AbsolutePosition;
-        Vector2 relativeVelocity = AbsoluteVelocity - parent.AbsoluteVelocity;
-        ScientificDecimal eccentricity = (
-            Vector2.CrossProduct(relativeVelocity, Vector2.CrossProduct(relativePosition, relativeVelocity)) / 
-            (parent.Mass * G) - relativePosition / relativePosition.Magnitude()
-        ).Magnitude();
-        ScientificDecimal specificAngularMomentum = Vector2.CrossProduct(Position, Velocity);
-        return -0.5f * (parent.Mass * parent.Mass * G * G) / 
-               (specificAngularMomentum * specificAngularMomentum) *
-               (1 - eccentricity * eccentricity);
+        ScientificDecimal speed = Velocity.Magnitude();
+        ScientificDecimal distance = (AbsolutePosition - parent.AbsolutePosition).Magnitude();
+        return speed * speed * 0.5f - (parent.Mass * G) / distance;
+    }
+
+    public void ResetSpecificOrbitalEnergy(Body parent)
+    {
+        ScientificDecimal distance = (AbsolutePosition - parent.AbsolutePosition).Magnitude();
+        if(2 * (_specificOrbitalEnergy + parent.Mass * G / distance) < 0) return;
+        ScientificDecimal desiredSpeed = ScientificDecimal.Sqrt(2 * (_specificOrbitalEnergy + parent.Mass * G / distance));
+        Velocity = Velocity / Velocity.Magnitude() * desiredSpeed;
     }
     
     #endregion
@@ -205,6 +204,7 @@ public class Body(string name, ScientificDecimal mass, ScientificDecimal radius,
     public void SetOrbitPathParent(Body? parent)
     {
         _orbitPath.Parent = parent;
+        _orbitPath.Points.Clear();
         LogNullPosition();
     }
 

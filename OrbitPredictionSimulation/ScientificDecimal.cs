@@ -162,7 +162,11 @@ public struct ScientificDecimal
 
     public static ScientificDecimal Sqrt(ScientificDecimal value)
     {
-        if (value.Mantissa < 0) throw new ArgumentOutOfRangeException();
+        if (value.Mantissa < 0)
+        {
+            Console.WriteLine(value.Mantissa);
+            throw new ArgumentOutOfRangeException();
+        }
         if (value.Exponent % 2 != 0) value = value.IncreaseExponent(value.Exponent + 1);
         return new ScientificDecimal(Utils.DecimalSqrt(value.Mantissa), value.Exponent / 2);
     }
@@ -175,7 +179,7 @@ public struct ScientificDecimal
     public override string ToString()
     {
         string mantissaString = Mantissa.ToString(CultureInfo.InvariantCulture);
-        mantissaString = mantissaString.Substring(Positive ? 0 : 1, 
+        mantissaString = (Positive ? "" : "-") + mantissaString.Substring(Positive ? 0 : 1, 
             Math.Min(PrintPrecision + 1, mantissaString.Length));
         return mantissaString + "e" + Exponent.ToString("+0;-#");
     }
