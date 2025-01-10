@@ -54,6 +54,11 @@ public struct Vector2(ScientificDecimal x, ScientificDecimal y)
         Vector2 difference = end - start;
         return difference.PrincipalAngle();
     }
+
+    public static double AngleFormed(Vector2 a, Vector2 b)
+    {
+        return AngleBetween(Zero, a) - AngleBetween(Zero, b);
+    }
     
     // returns a normalized direction vector from one point to another
     public static Vector2 DirectionVectorBetween(Vector2 start, Vector2 end)

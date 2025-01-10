@@ -4,7 +4,7 @@ namespace OrbitPredictionSimulation;
 
 public static class Options
 {
-    public static readonly SimulationMethod SimMethod = SimulationMethod.Kepler;
+    public static readonly SimulationMethod SimMethod = SimulationMethod.VelocityVerlet;
     public static readonly (int width, int height) ScreenSize = (800, 800);
     public const int FontSize = 20;
     
@@ -24,6 +24,7 @@ public static class Options
     
     // If the number of orbital points lies outside of this bound,
     // orbital lines for that body will no longer be updated
+    // This prevents orbit lines from skipping from one point to another
     public const int MinKeplerOrbitPoints = 20;
     
     // Camera options

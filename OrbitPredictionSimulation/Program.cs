@@ -213,7 +213,7 @@ void ApplyEulerMethod()
         if (logPositionThisFrame) body.LogPosition();
         body.CalculateOrbitScreenPoints(drawOptions);
     }
-    
+
     foreach (Body body in bodies)
     {
         Body? orbitPathParent = body.GetOrbitPathParent();
@@ -270,6 +270,8 @@ void ApplyVelocityVerletMethod()
 
     for (int i = 0; i < bodies.Length; ++i)
         bodies[i].Velocity += (accelerations1[i] + accelerations2[i]) * 0.5f * dt;
+    
+    
 }
 
 void ApplyKeplerMethod()
@@ -318,6 +320,8 @@ void OnRender(double _)
         case SimulationMethod.Kepler: ApplyKeplerMethod(); break;
         case SimulationMethod.VelocityVerlet: ApplyVelocityVerletMethod(); break;
     }
+    
+    Console.WriteLine("Earth: " + earth.GetSpecificOrbitalEnergy(sun));
     
     if (tracking != null) camera.SetOrigin(tracking.AbsolutePosition);
     
