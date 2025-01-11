@@ -139,24 +139,190 @@ Body sun = new Body(
     new ScientificDecimal(1.32712440018m, 20),
     new SKColor(255, 255, 255, 255)
 );
+Body mercury = new Body(
+    "Mercury",
+    new ScientificDecimal(3.285m, 23),
+    new ScientificDecimal(2.4397m, 6),
+    new Vector3(
+        new ScientificDecimal(-5.6940545m, 10), 
+        new ScientificDecimal( 3.2977160m, 9), 
+        new ScientificDecimal( 5.4921780m, 9)
+    ), 
+    new Vector3(
+        new ScientificDecimal(-1.2946428m, 4), 
+        new ScientificDecimal(-4.6540563m, 4), 
+        new ScientificDecimal(-2.6159023m, 3)
+    ),
+    new ScientificDecimal(2.20320m, 13),
+    new SKColor(140, 140, 140, 255),
+    sun
+    );
+Body venus = new Body(
+    "Venus",
+    new ScientificDecimal(4.867m, 24),
+    new ScientificDecimal(6.0518m, 6),
+    new Vector3(
+        new ScientificDecimal( 8.2978939m, 10), 
+        new ScientificDecimal( 6.9376114m, 10), 
+        new ScientificDecimal(-3.8351672m, 9)
+    ), 
+    new Vector3(
+        new ScientificDecimal(-2.2569107m, 4), 
+        new ScientificDecimal( 2.6718186m, 4), 
+        new ScientificDecimal( 1.6691963m, 3)
+    ),
+    new ScientificDecimal(3.24858592m, 14),
+    new SKColor(230, 160, 40, 255),
+    sun
+    );
 Body earth = new Body(
     "Earth",
     new ScientificDecimal(5.9722m, 24), 
     new ScientificDecimal(6.378m, 6), 
     new Vector3(
-        new ScientificDecimal(-9.4260948m,9), 
-        new ScientificDecimal(1.4615465m, 11), 
-        new ScientificDecimal(-8.066655m, 6)), 
+        new ScientificDecimal(-9.4260948m, 9), 
+        new ScientificDecimal( 1.4615465m, 11), 
+        new ScientificDecimal(-8.0666553m, 6)
+        ), 
     new Vector3(
         new ScientificDecimal(-3.0211005m, 4), 
         new ScientificDecimal(-1.8512639m, 3), 
-        new ScientificDecimal(1.2098514m, 0)),
+        new ScientificDecimal( 1.2098514m, 0)
+        ),
     new ScientificDecimal(3.986004418m, 14),
     new SKColor(100, 200, 255, 255),
     sun
 );
+Body moon = new Body(
+    "Moon",
+    new ScientificDecimal(7.349m, 22), 
+    new ScientificDecimal(1.737m, 6), 
+    new Vector3(
+        new ScientificDecimal(-3.6413936m, 8), 
+        new ScientificDecimal(-1.7481022m, 8),
+        new ScientificDecimal(-1.4438294m, 7)
+        ), 
+    new Vector3(
+        new ScientificDecimal( 4.2899598m, 2), 
+        new ScientificDecimal(-8.6413934m, 2),
+        new ScientificDecimal(-7.7273784m, 1)
+        ),
+        new ScientificDecimal(4.9048694m, 12),
+    new SKColor(180, 180, 180, 255),
+    earth
+);
+Body mars = new Body(
+    "Mars",
+    new ScientificDecimal(6.39m, 23),
+    new ScientificDecimal(3.3895m, 6),
+    new Vector3(
+        new ScientificDecimal(-6.4603691m, 10), 
+        new ScientificDecimal( 2.3127019m, 11),
+        new ScientificDecimal( 6.4306793m, 9)
+    ), 
+    new Vector3(
+        new ScientificDecimal(-2.2420469m, 4), 
+        new ScientificDecimal(-4.6499686m, 3),
+        new ScientificDecimal( 4.5107334m, 2)
+    ),
+    new ScientificDecimal(4.282837m, 13),
+    new SKColor(255, 100, 100, 255),
+    sun
+    );
 
-Body[] bodies = [sun, earth];
+Body jupiter = new Body(
+    "Jupiter",
+    new ScientificDecimal(1.898m, 27),
+    new ScientificDecimal(6.9911m, 7),
+    new Vector3(
+        new ScientificDecimal( 1.6580000m, 11), 
+        new ScientificDecimal( 7.4166230m, 11),
+        new ScientificDecimal(-6.7903160m, 9)
+    ), 
+    new Vector3(
+        new ScientificDecimal(-1.2915655m, 4), 
+        new ScientificDecimal( 3.4670152m, 3),
+        new ScientificDecimal( 2.7448357m, 2)
+    ),
+    new ScientificDecimal(1.26686534m, 17),
+    new SKColor(150, 120, 80, 255),
+    sun
+    );
+Body saturn = new Body(
+    "Saturn",
+    new ScientificDecimal(5.683m, 26),
+    new ScientificDecimal(5.8232m, 7),
+    new Vector3(
+        new ScientificDecimal( 1.4146019m, 12), 
+        new ScientificDecimal(-2.6971440m, 11),
+        new ScientificDecimal(-5.1612737m, 10)
+    ), 
+    new Vector3(
+        new ScientificDecimal( 1.2650097m, 3), 
+        new ScientificDecimal( 9.4749677m, 3),
+        new ScientificDecimal(-2.1571900m, 2)
+    ),
+    new ScientificDecimal(3.7931187m, 16),
+    new SKColor(150, 150, 80, 255),
+    sun
+    );
+Body uranus = new Body(
+    "Uranus",
+    new ScientificDecimal(8.681m, 25),
+    new ScientificDecimal(2.5362m, 7),
+    new Vector3(
+        new ScientificDecimal( 1.6645067m, 12), 
+        new ScientificDecimal( 2.4055482m, 12),
+        new ScientificDecimal(-1.2648282m, 10)
+    ), 
+    new Vector3(
+        new ScientificDecimal(-5.6626764m, 3), 
+        new ScientificDecimal( 3.5634117m, 3),
+        new ScientificDecimal( 8.6583568m, 1)
+    ),
+    new ScientificDecimal(5.793939m, 15),
+    new SKColor(170, 200, 255, 255),
+    sun
+    );
+Body neptune = new Body(
+    "Neptune",
+    new ScientificDecimal(1.024m, 26),
+    new ScientificDecimal(2.4622m, 7),
+    new Vector3(
+        new ScientificDecimal( 4.4699311m, 12), 
+        new ScientificDecimal(-9.8183016m, 10),
+        new ScientificDecimal(-1.0098417m, 11)
+    ), 
+    new Vector3(
+        new ScientificDecimal( 7.2829293m, 1), 
+        new ScientificDecimal( 5.4729751m, 3),
+        new ScientificDecimal(-1.1468351m, 2)
+    ),
+    new ScientificDecimal(	6.836529m, 15),
+    new SKColor(100, 120, 200, 255),
+    sun
+    );
+Body pluto = new Body(
+    "Pluto",
+    // mass of pluto and charon
+    new ScientificDecimal(1.309m, 22) + new ScientificDecimal(1.590m, 21),
+    new ScientificDecimal(1.1883m, 6),
+    new Vector3(
+        new ScientificDecimal( 2.7241027m, 12), 
+        new ScientificDecimal(-4.4901164m, 12),
+        new ScientificDecimal(-3.0720153m, 11)
+    ), 
+    new Vector3(
+        new ScientificDecimal( 4.7808422m, 3), 
+        new ScientificDecimal( 1.6241702m, 3),
+        new ScientificDecimal(-1.5593730m, 3)
+    ),
+    new ScientificDecimal(8.71m, 11),
+    new SKColor(200, 100, 200, 255),
+    sun
+    );
+
+Body[] bodies = [sun, mercury, venus, earth, moon, mars, jupiter, saturn, uranus, neptune, pluto];
 
 Camera camera = new Camera(Vector2.Zero, Options.DefaultCamZoom, Options.DefaultCamZoom);
 
