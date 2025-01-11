@@ -2,9 +2,8 @@ using SkiaSharp;
 
 namespace OrbitPredictionSimulation;
 
-/*
-public class Body(string name, ScientificDecimal mass, ScientificDecimal radius, Vector2 position, Vector2 velocity, 
-    SKColor color)
+public class Body(string name, ScientificDecimal mass, ScientificDecimal radius, Vector3 position, Vector3 velocity,
+    ScientificDecimal mu, SKColor color)
 {
     private static readonly ScientificDecimal G = new(667430, -16);
     private const int MinimumRadius = Options.MinimumVisibleRadius;
@@ -16,41 +15,50 @@ public class Body(string name, ScientificDecimal mass, ScientificDecimal radius,
     public ScientificDecimal Mass { get; set; } = mass;
     public ScientificDecimal Radius { get; set; } = radius;
 
-    public Vector2 Position { get; set; } = position;
-    public Vector2 RelativePosition => Position - (Parent?.Position ?? Vector2.Zero);
+    public Vector3 Position { get; set; } = position;
+    public Vector3 RelativePosition => Position - (Parent?.Position ?? Vector3.Zero);
     
-    public Vector2 Velocity { get; set; } = velocity;
-    public Vector2 RelativeVelocity => Velocity - (Parent?.Velocity ?? Vector2.Zero);
+    public Vector3 Velocity { get; set; } = velocity;
+    public Vector3 RelativeVelocity => Velocity - (Parent?.Velocity ?? Vector3.Zero);
     
     public SKColor Color { get; set; } = color;
     public Body? Parent { get; private set; }
 
-    private double _lastLoggedAngle;
-    private Vector2? _eccentricityVector;
+    private Vector3 _lastLoggedTrajectory;
+    private Vector3? _eccentricityVector;
     private ScientificDecimal _eccentricity;
-    private double _periapsisTrueAnomaly;
-    private double _apoapsisTrueAnomaly;
+    private double _ascendingNode;
+    private double _inclination;
+    private double _argumentOfPeriapsis;
+    private double _argumentOfApoapsis;
+    private Vector3 _specificAngularMomentumVector;
     private ScientificDecimal _specificAngularMomentum;
     private ScientificDecimal _specificOrbitalEnergy;
-    private readonly OrbitPath _orbitPath = new (new List<Vector2?>(), color);
+    private readonly OrbitPath _orbitPath = new (new List<Vector3?>(), color);
 
-    private ScientificDecimal Mu => G * (Parent?? throw new NullReferenceException()).Mass;
+    // standard gravitational parameter
+    public ScientificDecimal Mu { get; set; } = mu;
 
     private void CalculateInitials()
     {
-        _specificAngularMomentum = Vector2.CrossProduct(RelativePosition, RelativeVelocity);
-        _eccentricityVector = Vector2.CrossProduct(RelativeVelocity, _specificAngularMomentum) / Mu -
+        if (Parent == null) throw new NullReferenceException("Parent cannot be null when calculating initials.");
+        _specificAngularMomentumVector = Vector3.CrossProduct(RelativePosition, RelativeVelocity);
+        _specificAngularMomentum = _specificAngularMomentumVector.Magnitude();
+        _eccentricityVector = Vector3.CrossProduct(RelativeVelocity, _specificAngularMomentumVector) / Parent.Mu -
                               RelativePosition / RelativePosition.Magnitude();
         _eccentricity = _eccentricityVector.Value.Magnitude();
-        _periapsisTrueAnomaly = _eccentricityVector.Value.PrincipalAngle();
-        _apoapsisTrueAnomaly = _periapsisTrueAnomaly + Math.PI;
+        Vector3 nVector = Vector3.CrossProduct(new Vector3(0, 0, 1), _specificAngularMomentumVector);
+        _ascendingNode = Math.Acos((double)(nVector.X / nVector.Magnitude())) % Math.Tau;
+        _inclination = Math.Acos((double)(_specificAngularMomentumVector.Z / _specificAngularMomentum)) % Math.Tau;
+        _argumentOfPeriapsis = Math.Acos((double)(nVector * _eccentricityVector / nVector.Magnitude() * _eccentricity));
+        _argumentOfApoapsis = _argumentOfPeriapsis + Math.PI;
         _specificOrbitalEnergy = RelativeVelocity.Magnitude() * RelativeVelocity.Magnitude() * 0.5f - 
-                                 Mu / RelativePosition.Magnitude();
+                                 Parent.Mu / RelativePosition.Magnitude();
     }
     
-    public Body(string name, ScientificDecimal mass, ScientificDecimal radius, Vector2 position, Vector2 velocity, 
-        SKColor color, Body? parent = null) 
-        : this(name, mass, radius, position, velocity, color)
+    public Body(string name, ScientificDecimal mass, ScientificDecimal radius, Vector3 position, Vector3 velocity,
+        ScientificDecimal mu, SKColor color, Body? parent = null) 
+        : this(name, mass, radius, position, velocity, mu, color)
     {
         if (parent == null) return;
         Parent = parent;
@@ -83,11 +91,9 @@ public class Body(string name, ScientificDecimal mass, ScientificDecimal radius,
         canvas.DrawCircle(bodyScreenX, bodyScreenY, circleRadius, paint);
     }
 
-    public void SetRelativePosition(Vector2 position) 
-        => Position = position + (Parent?.Position ?? Vector2.Zero);
+    public void SetRelativePosition(Vector3 position) => Position = position + (Parent?.Position ?? Vector3.Zero);
 
-    public void SetRelativeVelocity(Vector2 velocity)
-        => Velocity = velocity + (Parent?.Velocity ?? Vector2.Zero);
+    public void SetRelativeVelocity(Vector3 velocity) => Velocity = velocity + (Parent?.Velocity ?? Vector3.Zero);
 
     public void SetParent(Body? parent)
     {
@@ -103,23 +109,31 @@ public class Body(string name, ScientificDecimal mass, ScientificDecimal radius,
     
     private ScientificDecimal PolarDistanceAtAnomaly(double angle)
     {
-        if (_eccentricityVector == null) throw new NullReferenceException();
-        ScientificDecimal constant = _specificAngularMomentum * _specificAngularMomentum / Mu;
-        return constant / (1 + _eccentricityVector.Value.Magnitude() * Math.Cos(angle - _periapsisTrueAnomaly));
+        if (Parent == null || _eccentricityVector == null) throw new NullReferenceException();
+        ScientificDecimal constant = _specificAngularMomentum * _specificAngularMomentum / Parent.Mu;
+        return constant / (1 + _eccentricityVector.Value.Magnitude() * Math.Cos(angle - _argumentOfPeriapsis));
     }
 
-    public Vector2 CartesianDistanceAtAnomaly(double angle)
+    public Vector3 CartesianDistanceAtAnomaly(double angle)
     {
-        angle += _apoapsisTrueAnomaly;
+        angle += _argumentOfPeriapsis + _ascendingNode;
         ScientificDecimal distance = PolarDistanceAtAnomaly(angle);
-        return new Vector2(distance * Math.Cos(angle), distance * Math.Sin(angle));
+        Vector3 nonInclinedPosition = new(distance * Math.Cos(angle), distance * Math.Sin(angle), 0);
+        // r is the distance from axis of rotation to the non-inclined position
+        ScientificDecimal r = distance * Math.Cos(_ascendingNode - Vector2.AngleTo(nonInclinedPosition.Flatten(), Vector2.Zero));
+        Vector3 rVector = new Vector3(r * Math.Cos(_ascendingNode), r * Math.Sin(_ascendingNode), 0);
+        Vector3 inclinedRVector = new Vector3(
+            r * Math.Cos(_ascendingNode) * Math.Cos(_inclination), 
+            r * Math.Sin(_ascendingNode) * Math.Cos(_inclination), 
+            r * Math.Sin(_inclination));
+        return nonInclinedPosition + rVector - inclinedRVector;
     }
 
     public ScientificDecimal OrbitalPeriod()
     {
         if (Parent == null) throw new NullReferenceException();
-        ScientificDecimal constant = 4 * Math.PI * Math.PI / Mu;
-        ScientificDecimal semiMajorAxis = PolarDistanceAtAnomaly(_periapsisTrueAnomaly); 
+        ScientificDecimal constant = 4 * Math.PI * Math.PI / Parent.Mu;
+        ScientificDecimal semiMajorAxis = PolarDistanceAtAnomaly(_argumentOfApoapsis); 
         return ScientificDecimal.Sqrt(constant * semiMajorAxis * semiMajorAxis * semiMajorAxis);
     }
 
@@ -150,30 +164,29 @@ public class Body(string name, ScientificDecimal mass, ScientificDecimal radius,
         return Math.Atan2((double) y, (double) x) % Math.Tau;
     }
 
-    public Vector2 GetInstantGravitationalForce(Body attractor)
+    public Vector3 GetInstantGravitationalForce(Body attractor)
     {
-        Vector2 difference = attractor.Position - Position;
+        Vector3 difference = attractor.Position - Position;
         ScientificDecimal forceMagnitude = G * Mass * attractor.Mass / (difference.Magnitude() * difference.Magnitude());
-        return Vector2.DirectionVectorBetween(Position, attractor.Position) * forceMagnitude;
+        return Vector3.DirectionVectorBetween(Position, attractor.Position) * forceMagnitude;
     }
     
     // if this instance appears inside the list of attractors, skip over it
-    public Vector2 GetInstantNetGravitationalForce(Body[] attractors)
+    public Vector3 GetInstantNetGravitationalForce(Body[] attractors)
     {
-        Vector2 result = new Vector2(0, 0);
+        Vector3 result = Vector3.Zero;
         return attractors
             .Where(attractor => attractor != this)
             .Aggregate(result, (current, attractor) => current + GetInstantGravitationalForce(attractor));
     }
 
-    public Vector2 GetInstantAcceleration(Body[] attractors)
-        => GetInstantNetGravitationalForce(attractors) / Mass;
+    public Vector3 GetInstantAcceleration(Body[] attractors) => GetInstantNetGravitationalForce(attractors) / Mass;
     
     public bool IsInOrbit()
     {
         if (Parent == null) return false;
         ScientificDecimal eccentricity = (
-            Vector2.CrossProduct(RelativeVelocity, Vector2.CrossProduct(RelativePosition, RelativeVelocity)) / 
+            Vector3.CrossProduct(RelativeVelocity, Vector3.CrossProduct(RelativePosition, RelativeVelocity)) / 
             (Parent.Mass * G) - RelativePosition / RelativePosition.Magnitude()
         ).Magnitude();
         if (eccentricity > 1) return false;
@@ -201,8 +214,7 @@ public class Body(string name, ScientificDecimal mass, ScientificDecimal radius,
     
     #region Orbit Path Methods
     
-    public void LogPosition()
-        => _orbitPath.LogPosition(this, MaxPositions);
+    public void LogPosition() => _orbitPath.LogPosition(this, MaxPositions);
 
     public void LogNullPosition()
     {
@@ -210,26 +222,19 @@ public class Body(string name, ScientificDecimal mass, ScientificDecimal radius,
         else if (_orbitPath.Points[^1] != null) _orbitPath.Points.Add(null);
     }
 
-    public void DrawOrbitPath(DrawOptions options)
-        => _orbitPath.Draw(options);
+    public void DrawOrbitPath(DrawOptions options) => _orbitPath.Draw(options);
 
-    public void CalculateOrbitScreenPoints(DrawOptions options)
-        => _orbitPath.CalculateScreenPoints(options);
+    public void CalculateOrbitScreenPoints(DrawOptions options) => _orbitPath.CalculateScreenPoints(options);
 
-    public double GetTrajectoryAngle(Vector2 futureLocation)
+    public Vector3 GetTrajectory(Vector3 futureLocation) => futureLocation - Position;
+    
+    public void LogTrajectory(Vector3 futureLocation) => _lastLoggedTrajectory = GetTrajectory(futureLocation);
+
+    public double GetTrajectoryAngularDeviation(Vector3 futureLocation)
     {
-        return Vector2.AngleBetween(RelativePosition, futureLocation);
-    }
-
-    public void LogTrajectory(Vector2 futureLocation)
-    {
-        _lastLoggedAngle = GetTrajectoryAngle(futureLocation);
-    }
-
-    public double GetAngularDeviationSinceLastLoggedPosition(Vector2 futureLocation)
-    {
-        return Math.Abs((GetTrajectoryAngle(futureLocation) - _lastLoggedAngle) % Math.Tau);
+        if (_lastLoggedTrajectory.Magnitude() == 0) return double.MaxValue;
+        return Vector3.AngleBetween(GetTrajectory(futureLocation), _lastLoggedTrajectory);
     }
 
     #endregion
-}*/
+}

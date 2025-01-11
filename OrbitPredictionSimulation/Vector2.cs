@@ -30,15 +30,6 @@ public struct Vector2(ScientificDecimal x, ScientificDecimal y)
 
     public ScientificDecimal Magnitude()
         => ScientificDecimal.Sqrt(X * X + Y * Y);
-    
-    public static ScientificDecimal CrossProduct(Vector2 a, Vector2 b)
-        => a.X * b.Y - a.Y * b.X;
-    
-    public static Vector2 CrossProduct(Vector2 a, ScientificDecimal b)
-        => new (a.Y * b, -a.X * b);
-
-    public static Vector2 CrossProduct(ScientificDecimal a, Vector2 b)
-        => new (-a * b.Y, a * b.X);
 
     public double PrincipalAngle()
     {
@@ -49,22 +40,10 @@ public struct Vector2(ScientificDecimal x, ScientificDecimal y)
         return angle;
     }
 
-    public static double AngleBetween(Vector2 start, Vector2 end)
+    public static double AngleTo(Vector2 start, Vector2 end)
     {
         Vector2 difference = end - start;
         return difference.PrincipalAngle();
-    }
-
-    public static double AngleFormed(Vector2 a, Vector2 b)
-    {
-        return AngleBetween(Zero, a) - AngleBetween(Zero, b);
-    }
-    
-    // returns a normalized direction vector from one point to another
-    public static Vector2 DirectionVectorBetween(Vector2 start, Vector2 end)
-    {
-        double angle = AngleBetween(start, end);
-        return new Vector2(Math.Cos(angle), Math.Sin(angle));
     }
 
     public override string ToString()

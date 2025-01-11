@@ -2,18 +2,18 @@ using SkiaSharp;
 using SKPoint = SkiaSharp.SKPoint;
 
 namespace OrbitPredictionSimulation;
-/*
-public class OrbitPath(List<Vector2?> points, SKColor color)
+
+public class OrbitPath(List<Vector3?> points, SKColor color)
 {
     private static readonly int PathWidth = Options.OrbitPathWidth;
-    public List<Vector2?> Points { get; set; } = points;
+    public List<Vector3?> Points { get; set; } = points;
     private SKPoint[] _screenPoints = [];
     public SKColor Color { get; set; } = color;
     public Body? Parent { get; set; }
 
     public void LogPosition(Body body, int maxPositions)
     {
-        Points.Add(body.Position - (Parent?.Position ?? Vector2.Zero));
+        Points.Add(body.Position - (Parent?.Position ?? Vector3.Zero));
         if (Points.Count > maxPositions)
             Points.RemoveAt(0);
     }
@@ -21,7 +21,7 @@ public class OrbitPath(List<Vector2?> points, SKColor color)
     public void CalculateScreenPoints(DrawOptions options)
     {
         Camera cam = options.Camera;
-        Vector2 origin = Parent?.RelativePosition ?? Vector2.Zero;
+        Vector3 origin = Parent?.RelativePosition ?? Vector3.Zero;
         SKPoint? previousPoint = null;
         List<SKPoint> screenPoints = new List<SKPoint>();
         foreach (var worldPoint in Points)
@@ -60,4 +60,4 @@ public class OrbitPath(List<Vector2?> points, SKColor color)
         };
         options.Canvas.DrawPoints(SKPointMode.Lines, _screenPoints, paint);
     }
-}*/
+}

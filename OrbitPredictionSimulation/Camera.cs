@@ -24,7 +24,7 @@ public class Camera(Vector2 position, ScientificDecimal width, ScientificDecimal
         Height *= scale;
     }
     
-    public void GoToBody(Body3D body)
+    public void GoToBody(Body body)
     {
         SetOrigin(body.Position.Flatten());
         MoveTo(Vector2.Zero);
