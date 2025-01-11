@@ -29,6 +29,34 @@ using SKSurface surface = SKSurface.Create(grContext, renderTarget, GRSurfaceOri
 using SKCanvas canvas = surface.Canvas;
 IInputContext input = window.CreateInput();
 
+Body3D sun3d = new Body3D(
+    "Sun",
+    new ScientificDecimal(1.989m, 30),
+    new ScientificDecimal(6.96340m, 8),
+    Vector3.Zero,
+    Vector3.Zero,
+    new ScientificDecimal(1.32712440018m, 20),
+    new SKColor(255, 255, 255, 255)
+);
+Body3D earth3d = new Body3D(
+    "Earth",
+    new ScientificDecimal(5.9722m, 24), 
+    new ScientificDecimal(6.378m, 6), 
+    new Vector3(
+        new ScientificDecimal(-9.4260948m,9), 
+        new ScientificDecimal(1.4615465m, 11), 
+        new ScientificDecimal(-8.066655m, 6)), 
+    new Vector3(
+        new ScientificDecimal(-3.0211005m, 4), 
+        new ScientificDecimal(-1.8512639m, 3), 
+        new ScientificDecimal(1.2098514m, 0)),
+    new ScientificDecimal(3.986004418m, 14),
+    new SKColor(100, 200, 255, 255),
+    sun3d
+);
+
+Body3D[] bodies3d = [sun3d, earth3d];
+
 Body sun = new Body(
     "Sun",
     new ScientificDecimal(1.989m, 30), 
@@ -54,7 +82,7 @@ Body venus = new Body(
     new Vector2(new ScientificDecimal(-2.33109495m, 4), new ScientificDecimal(2.60801434m, 4)),
     new SKColor(230, 160, 40, 255),
     sun
-);
+    );
 Body earth = new Body(
     "Earth",
     new ScientificDecimal(5.9722m, 24), 
@@ -296,6 +324,25 @@ void RungeKutta4Method()
     }
 }
 
+void EulerMethod3D()
+{
+    foreach (Body3D body in bodies3d)
+    {
+        body.LogPosition();
+        body.CalculateOrbitScreenPoints(drawOptions);
+    }
+    
+    foreach (Body3D body in bodies3d)
+    {
+        if (body.Parent != null)
+            if (!body.IsInOrbit())
+                body.SetParent(body.Parent.Parent);
+
+        body.Velocity += body.GetInstantAcceleration(bodies3d) * timeStep * deltaTime;
+        body.Position += body.Velocity * timeStep * deltaTime;
+    }
+}
+
 void ApplyIntegratorStep(Action integrator)
 {
     foreach (Body body in bodies)
@@ -368,8 +415,10 @@ void OnRender(double _)
     previousTime = DateTime.Now;
     time += deltaTime * timeStep;
     
-    foreach (Body body in bodies) body.Draw(drawOptions);
+    //foreach (Body body in bodies) body.Draw(drawOptions);
+    foreach (Body3D body in bodies3d) body.Draw(drawOptions);
     
+    /*
     switch (Options.SimMethod)
     {
         case SimulationMethod.Euler: ApplyIntegratorStep(EulerMethod); break;
@@ -378,11 +427,14 @@ void OnRender(double _)
         case SimulationMethod.RungeKutta4: ApplyIntegratorStep(RungeKutta4Method); break;
         case SimulationMethod.Kepler: ApplyKeplerMethod(); break;
     }
+    */
+    EulerMethod3D();
     
     if (tracking != null) camera.SetOrigin(tracking.Position);
     
-    foreach(Body body in bodies) body.DrawOrbitPath(drawOptions);
-
+    //foreach(Body body in bodies) body.DrawOrbitPath(drawOptions);
+    foreach (Body3D body in bodies3d) body.DrawOrbitPath(drawOptions);
+    
     HandleInput(input.Keyboards[0]);
     
     canvas.DrawText("Simulation Method: " + Options.SimMethod, 20, 40, font, paint);
