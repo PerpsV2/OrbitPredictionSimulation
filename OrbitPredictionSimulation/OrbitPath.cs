@@ -2,7 +2,7 @@ using SkiaSharp;
 using SKPoint = SkiaSharp.SKPoint;
 
 namespace OrbitPredictionSimulation;
-
+/*
 public class OrbitPath(List<Vector2?> points, SKColor color)
 {
     private static readonly int PathWidth = Options.OrbitPathWidth;
@@ -60,4 +60,4 @@ public class OrbitPath(List<Vector2?> points, SKColor color)
         };
         options.Canvas.DrawPoints(SKPointMode.Lines, _screenPoints, paint);
     }
-}
+}*/

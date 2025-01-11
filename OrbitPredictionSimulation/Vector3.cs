@@ -13,7 +13,6 @@ public struct Vector3(ScientificDecimal x, ScientificDecimal y, ScientificDecima
     
     public static Vector3 operator +(Vector3 a, Vector3 b)
         => new(a.X + b.X, a.Y + b.Y, a.Z + b.Z);
-    
 
     public static Vector3 operator -(Vector3 a, Vector3 b)
         => a + -b;
@@ -28,8 +27,8 @@ public struct Vector3(ScientificDecimal x, ScientificDecimal y, ScientificDecima
     }
     
     // dot product
-    public static Vector3 operator *(Vector3 a, Vector3 b)
-        => new (a.X * b.X, a.Y * b.Y, a.Z * b.Z);
+    public static ScientificDecimal operator *(Vector3 a, Vector3 b)
+        => a.X * b.X + a.Y * b.Y + a.Z * b.Z;
 
     public ScientificDecimal Magnitude()
         => ScientificDecimal.Sqrt(X * X + Y * Y + Z * Z);
@@ -58,11 +57,10 @@ public struct Vector3(ScientificDecimal x, ScientificDecimal y, ScientificDecima
         Vector2 difference = end - start;
         return difference.PrincipalAngle();
     }
-
-    public static double AngleFormed(Vector2 a, Vector2 b)
-    {
-        return AngleBetween(Zero, a) - AngleBetween(Zero, b);
-    }*/
+    */
+    
+    public static double AngleBetween(Vector3 a, Vector3 b)
+        => Math.Acos((double)(a * b / (a.Magnitude() * b.Magnitude())));
 
     public static Vector3 DirectionVectorBetween(Vector3 start, Vector3 end)
     {
@@ -71,5 +69,5 @@ public struct Vector3(ScientificDecimal x, ScientificDecimal y, ScientificDecima
     }
 
     public override string ToString()
-        => "<" + X + ", " + Y + "," + Z + ">";
+        => "<" + X + ", " + Y + ", " + Z + ">";
 }

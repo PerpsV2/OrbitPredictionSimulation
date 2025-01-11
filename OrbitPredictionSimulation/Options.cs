@@ -5,7 +5,7 @@ namespace OrbitPredictionSimulation;
 public static class Options
 {
     // Simulation options
-    public static readonly SimulationMethod SimMethod = SimulationMethod.VelocityVerlet;
+    public static readonly SimulationMethod SimMethod = SimulationMethod.Leapfrog;
     public const bool CorrectOrbitalEnergyDrift = true;
     
     // Window graphics options

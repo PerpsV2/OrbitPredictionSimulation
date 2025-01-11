@@ -2,6 +2,7 @@ using SkiaSharp;
 
 namespace OrbitPredictionSimulation;
 
+/*
 public class Body(string name, ScientificDecimal mass, ScientificDecimal radius, Vector2 position, Vector2 velocity, 
     SKColor color)
 {
@@ -231,4 +232,4 @@ public class Body(string name, ScientificDecimal mass, ScientificDecimal radius,
     }
 
     #endregion
-}
+}*/

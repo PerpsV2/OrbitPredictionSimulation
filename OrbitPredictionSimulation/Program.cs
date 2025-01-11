@@ -57,6 +57,7 @@ Body3D earth3d = new Body3D(
 
 Body3D[] bodies3d = [sun3d, earth3d];
 
+/*
 Body sun = new Body(
     "Sun",
     new ScientificDecimal(1.989m, 30), 
@@ -155,13 +156,13 @@ Body moon = new Body(
     new Vector2(new ScientificDecimal(6.1224179m, 2), new ScientificDecimal(-7.5360303m, 2)),
     new SKColor(180, 180, 180, 255),
     earth
-    );
+    );*/
 
-Body[] bodies = [sun, mercury, venus, earth, moon, mars, jupiter, saturn, uranus, neptune, pluto];
+Body3D[] bodies = [sun3d, earth3d];
 Camera camera = new Camera(Vector2.Zero, Options.DefaultCamZoom, Options.DefaultCamZoom);
 
 int trackingIndex = 0;
-Body? tracking = null;
+Body3D? tracking = null;
 
 SKPaint paint = new SKPaint
 {
@@ -218,120 +219,6 @@ void HandleInput(IKeyboard keyboard)
 
 void EulerMethod()
 {
-    foreach (Body body in bodies)
-    {
-        if (body.Parent != null)
-            if (!body.IsInOrbit())
-                body.SetParent(body.Parent.Parent);
-
-        body.Velocity += body.GetInstantAcceleration(bodies) * timeStep * deltaTime;
-        body.Position += body.Velocity * timeStep * deltaTime;
-    }
-}
-
-void VelocityVerletMethod() 
-{
-    ScientificDecimal dt = timeStep * deltaTime;
-    
-    Vector2[] accelerations1 = new Vector2[bodies.Length];
-    Vector2[] accelerations2 = new Vector2[bodies.Length];
-    
-    for (int i = 0; i < bodies.Length; ++i)
-        accelerations1[i] = bodies[i].GetInstantAcceleration(bodies);
-    
-    for (int i = 0; i < bodies.Length; ++i)
-        bodies[i].Position += bodies[i].Velocity * dt + accelerations1[i] * 0.5f * dt * dt;
-    
-    for (int i = 0; i < bodies.Length; ++i)
-        accelerations2[i] = bodies[i].GetInstantAcceleration(bodies);
-
-    for (int i = 0; i < bodies.Length; ++i)
-        bodies[i].Velocity += (accelerations1[i] + accelerations2[i]) * 0.5f * dt;
-}
-
-void LeapfrogMethod() 
-{
-    ScientificDecimal dt = timeStep * deltaTime;
-    
-    Vector2[] accelerations1 = new Vector2[bodies.Length];
-    Vector2[] accelerations2 = new Vector2[bodies.Length];
-
-    for (int i = 0; i < bodies.Length; ++i)
-        accelerations1[i] = bodies[i].GetInstantAcceleration(bodies);
-    
-    for (int i = 0; i < bodies.Length; ++i)
-        bodies[i].Position += bodies[i].Velocity * dt + accelerations1[i] * 0.5f * dt * dt;
-
-    for (int i = 0; i < bodies.Length; ++i)
-        accelerations2[i] = bodies[i].GetInstantAcceleration(bodies);
-    
-    for (int i = 0; i < bodies.Length; ++i)
-        bodies[i].Velocity += (accelerations1[i] + accelerations2[i]) * 0.5f * dt;
-}
-
-void RungeKutta4Method() 
-{
-    ScientificDecimal dt = timeStep * deltaTime;
-
-    Vector2[] positionK1 = new Vector2[bodies.Length];
-    Vector2[] positionK2 = new Vector2[bodies.Length];
-    Vector2[] positionK3 = new Vector2[bodies.Length];
-    Vector2[] positionK4 = new Vector2[bodies.Length];
-    Vector2[] velocityK1 = new Vector2[bodies.Length];
-    Vector2[] velocityK2 = new Vector2[bodies.Length];
-    Vector2[] velocityK3 = new Vector2[bodies.Length];
-    Vector2[] velocityK4 = new Vector2[bodies.Length];
-    Vector2[] accelerations1 = new Vector2[bodies.Length];
-    Vector2[] accelerations2 = new Vector2[bodies.Length];
-    Body[] tempBodies = new Body[bodies.Length];
-
-    for (int i = 0; i < bodies.Length; ++i)
-    {
-        Body body = bodies[i];
-        tempBodies[i] = new Body(body.Name, body.Mass, body.Radius, body.Position, body.Velocity, body.Color,
-            body.Parent);
-    }
-    
-    for (int i = 0; i < bodies.Length; ++i)
-    {
-        accelerations1[i] = bodies[i].GetInstantAcceleration(bodies);
-        velocityK1[i] = accelerations1[i] * dt;
-        positionK1[i] = bodies[i].Velocity * dt;
-
-        tempBodies[i].Position = bodies[i].Position + positionK1[i] * 0.5f;
-        tempBodies[i].Velocity = bodies[i].Velocity + velocityK1[i] * 0.5f;
-        accelerations2[i] = tempBodies[i].GetInstantAcceleration(tempBodies);
-
-        velocityK2[i] = accelerations2[i] * dt;
-        positionK2[i] = tempBodies[i].Velocity * dt;
-
-        tempBodies[i].Position = bodies[i].Position + positionK2[i] * 0.5f;
-        tempBodies[i].Velocity = bodies[i].Velocity + velocityK2[i] * 0.5f;
-        accelerations2[i] = tempBodies[i].GetInstantAcceleration(tempBodies);
-
-        velocityK3[i] = accelerations2[i] * dt;
-        positionK3[i] = tempBodies[i].Velocity * dt;
-
-        tempBodies[i].Position = bodies[i].Position + positionK3[i];
-        tempBodies[i].Velocity = bodies[i].Velocity + velocityK3[i];
-        accelerations2[i] = tempBodies[i].GetInstantAcceleration(tempBodies);
-
-        velocityK4[i] = accelerations2[i] * dt;
-        positionK4[i] = tempBodies[i].Velocity * dt;
-
-        bodies[i].Velocity += (velocityK1[i] + velocityK2[i] * 2 + velocityK3[i] * 2 + velocityK4[i]) * (1f / 6f);
-        bodies[i].Position += (positionK1[i] + positionK2[i] * 2 + positionK3[i] * 2 + positionK4[i]) * (1f / 6f);
-    }
-}
-
-void EulerMethod3D()
-{
-    foreach (Body3D body in bodies3d)
-    {
-        body.LogPosition();
-        body.CalculateOrbitScreenPoints(drawOptions);
-    }
-    
     foreach (Body3D body in bodies3d)
     {
         if (body.Parent != null)
@@ -343,17 +230,112 @@ void EulerMethod3D()
     }
 }
 
-void ApplyIntegratorStep(Action integrator)
+void VelocityVerletMethod() 
 {
-    foreach (Body body in bodies)
+    ScientificDecimal dt = timeStep * deltaTime;
+    
+    Vector3[] accelerations1 = new Vector3[bodies.Length];
+    Vector3[] accelerations2 = new Vector3[bodies.Length];
+    
+    for (int i = 0; i < bodies3d.Length; ++i)
+        accelerations1[i] = bodies3d[i].GetInstantAcceleration(bodies3d);
+    
+    for (int i = 0; i < bodies3d.Length; ++i)
+        bodies3d[i].Position += bodies3d[i].Velocity * dt + accelerations1[i] * 0.5f * dt * dt;
+    
+    for (int i = 0; i < bodies3d.Length; ++i)
+        accelerations2[i] = bodies3d[i].GetInstantAcceleration(bodies3d);
+
+    for (int i = 0; i < bodies3d.Length; ++i)
+        bodies3d[i].Velocity += (accelerations1[i] + accelerations2[i]) * 0.5f * dt;
+}
+
+void LeapfrogMethod() 
+{
+    ScientificDecimal dt = timeStep * deltaTime;
+    
+    Vector3[] accelerations1 = new Vector3[bodies.Length];
+    Vector3[] accelerations2 = new Vector3[bodies.Length];
+
+    for (int i = 0; i < bodies3d.Length; ++i)
+        accelerations1[i] = bodies3d[i].GetInstantAcceleration(bodies3d);
+    
+    for (int i = 0; i < bodies3d.Length; ++i)
+        bodies3d[i].Position += bodies3d[i].Velocity * dt + accelerations1[i] * 0.5f * dt * dt;
+
+    for (int i = 0; i < bodies3d.Length; ++i)
+        accelerations2[i] = bodies3d[i].GetInstantAcceleration(bodies3d);
+    
+    for (int i = 0; i < bodies3d.Length; ++i)
+        bodies3d[i].Velocity += (accelerations1[i] + accelerations2[i]) * 0.5f * dt;
+}
+
+void RungeKutta4Method() 
+{
+    ScientificDecimal dt = timeStep * deltaTime;
+
+    Vector3[] positionK1 = new Vector3[bodies.Length];
+    Vector3[] positionK2 = new Vector3[bodies.Length];
+    Vector3[] positionK3 = new Vector3[bodies.Length];
+    Vector3[] positionK4 = new Vector3[bodies.Length];
+    Vector3[] velocityK1 = new Vector3[bodies.Length];
+    Vector3[] velocityK2 = new Vector3[bodies.Length];
+    Vector3[] velocityK3 = new Vector3[bodies.Length];
+    Vector3[] velocityK4 = new Vector3[bodies.Length];
+    Vector3[] accelerations1 = new Vector3[bodies.Length];
+    Vector3[] accelerations2 = new Vector3[bodies.Length];
+    Body3D[] tempBodies = new Body3D[bodies.Length];
+
+    for (int i = 0; i < bodies3d.Length; ++i)
+    {
+        Body3D body = bodies3d[i];
+        tempBodies[i] = new Body3D(body.Name, body.Mass, body.Radius, body.Position, body.Velocity, body.Mu, body.Color,
+            body.Parent);
+    }
+    
+    for (int i = 0; i < bodies.Length; ++i)
+    {
+        accelerations1[i] = bodies3d[i].GetInstantAcceleration(bodies3d);
+        velocityK1[i] = accelerations1[i] * dt;
+        positionK1[i] = bodies3d[i].Velocity * dt;
+
+        tempBodies[i].Position = bodies3d[i].Position + positionK1[i] * 0.5f;
+        tempBodies[i].Velocity = bodies3d[i].Velocity + velocityK1[i] * 0.5f;
+        accelerations2[i] = tempBodies[i].GetInstantAcceleration(tempBodies);
+
+        velocityK2[i] = accelerations2[i] * dt;
+        positionK2[i] = tempBodies[i].Velocity * dt;
+
+        tempBodies[i].Position = bodies3d[i].Position + positionK2[i] * 0.5f;
+        tempBodies[i].Velocity = bodies3d[i].Velocity + velocityK2[i] * 0.5f;
+        accelerations2[i] = tempBodies[i].GetInstantAcceleration(tempBodies);
+
+        velocityK3[i] = accelerations2[i] * dt;
+        positionK3[i] = tempBodies[i].Velocity * dt;
+
+        tempBodies[i].Position = bodies3d[i].Position + positionK3[i];
+        tempBodies[i].Velocity = bodies3d[i].Velocity + velocityK3[i];
+        accelerations2[i] = tempBodies[i].GetInstantAcceleration(tempBodies);
+
+        velocityK4[i] = accelerations2[i] * dt;
+        positionK4[i] = tempBodies[i].Velocity * dt;
+
+        bodies3d[i].Velocity += (velocityK1[i] + velocityK2[i] * 2 + velocityK3[i] * 2 + velocityK4[i]) * (1f / 6f);
+        bodies3d[i].Position += (positionK1[i] + positionK2[i] * 2 + positionK3[i] * 2 + positionK4[i]) * (1f / 6f);
+    }
+}
+
+void ApplyIntegratorStep3D(Action integrator)
+{
+    foreach (Body3D body in bodies3d)
     {
         bool logPositionThisFrame = true;
         if (body.Parent != null)
         {
             if (body.IsInOrbit())
             {
-                Vector2 futurePosition = body.Position + body.Velocity * timeStep * deltaTime;
-                if (body.GetAngularDeviationSinceLastLoggedPosition(futurePosition) < 
+                Vector3 futurePosition = body.Position + body.Velocity * timeStep * deltaTime;
+                if (body.GetTrajectoryAngularDeviation(futurePosition) < 
                     Math.Tau / Options.MaxIntegratorOrbitPoints)
                     logPositionThisFrame = false;
                 else body.LogTrajectory(futurePosition);
@@ -363,27 +345,27 @@ void ApplyIntegratorStep(Action integrator)
         body.CalculateOrbitScreenPoints(drawOptions);
     }
 
-    foreach (Body body in bodies)
+    foreach (Body3D body in bodies)
         if (body.Parent != null)
             if (!body.IsInOrbit())
                 body.SetParent(body.Parent.Parent);
 
     integrator();
     
-    foreach (Body body in bodies) 
+    foreach (Body3D body in bodies) 
         if (body.Parent != null)
             body.ResetSpecificOrbitalEnergy();
 }
 
-void ApplyKeplerMethod()
+void ApplyKeplerMethod3D()
 {
-    foreach (Body body in bodies)
+    foreach (Body3D body in bodies3d)
     {
         bool logPositionThisFrame = true;
         if (body.Parent != null)
         {
-            Vector2 futurePosition = body.CartesianDistanceAtAnomaly(body.TrueAnomaly(time) + 0.1f);
-            if (body.GetAngularDeviationSinceLastLoggedPosition(futurePosition) <
+            Vector3 futurePosition = body.CartesianDistanceAtAnomaly(body.TrueAnomaly(time) + 0.001f);
+            if (body.GetTrajectoryAngularDeviation(futurePosition) <
                 Math.Tau / Options.MaxKeplerOrbitPoints)
                 logPositionThisFrame = false;
             else body.LogTrajectory(futurePosition);
@@ -399,10 +381,9 @@ void ApplyKeplerMethod()
         }
     }
     
-    if (Options.CorrectOrbitalEnergyDrift)
-        foreach (Body body in bodies)
-            if (body.Parent != null) 
-                body.SetRelativePosition(body.CartesianDistanceAtAnomaly(body.TrueAnomaly(time)));
+    foreach (Body3D body in bodies3d)
+        if (body.Parent != null)
+            body.SetRelativePosition(body.CartesianDistanceAtAnomaly(body.TrueAnomaly(time)));
 }
 
 void OnRender(double _)
@@ -418,19 +399,16 @@ void OnRender(double _)
     //foreach (Body body in bodies) body.Draw(drawOptions);
     foreach (Body3D body in bodies3d) body.Draw(drawOptions);
     
-    /*
     switch (Options.SimMethod)
     {
-        case SimulationMethod.Euler: ApplyIntegratorStep(EulerMethod); break;
-        case SimulationMethod.VelocityVerlet: ApplyIntegratorStep(VelocityVerletMethod); break;
-        case SimulationMethod.Leapfrog: ApplyIntegratorStep(LeapfrogMethod); break;
-        case SimulationMethod.RungeKutta4: ApplyIntegratorStep(RungeKutta4Method); break;
-        case SimulationMethod.Kepler: ApplyKeplerMethod(); break;
+        case SimulationMethod.Euler: ApplyIntegratorStep3D(EulerMethod); break;
+        case SimulationMethod.VelocityVerlet: ApplyIntegratorStep3D(VelocityVerletMethod); break;
+        case SimulationMethod.Leapfrog: ApplyIntegratorStep3D(LeapfrogMethod); break;
+        case SimulationMethod.RungeKutta4: ApplyIntegratorStep3D(RungeKutta4Method); break;
+        case SimulationMethod.Kepler: ApplyKeplerMethod3D(); break;
     }
-    */
-    EulerMethod3D();
     
-    if (tracking != null) camera.SetOrigin(tracking.Position);
+    if (tracking != null) camera.SetOrigin(tracking.Position.Flatten());
     
     //foreach(Body body in bodies) body.DrawOrbitPath(drawOptions);
     foreach (Body3D body in bodies3d) body.DrawOrbitPath(drawOptions);

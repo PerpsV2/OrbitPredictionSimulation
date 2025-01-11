@@ -24,28 +24,34 @@ public class Body3D(string name, ScientificDecimal mass, ScientificDecimal radiu
     public SKColor Color { get; set; } = color;
     public Body3D? Parent { get; private set; }
 
-    private double _lastLoggedAngle;
+    private Vector3 _lastLoggedTrajectory;
     private Vector3? _eccentricityVector;
     private ScientificDecimal _eccentricity;
-    private double _periapsisTrueAnomaly;
-    private double _apoapsisTrueAnomaly;
+    private double _ascendingNode;
+    private double _inclination;
+    private double _argumentOfPeriapsis;
+    private double _argumentOfApoapsis;
     private Vector3 _specificAngularMomentumVector;
     private ScientificDecimal _specificAngularMomentum;
     private ScientificDecimal _specificOrbitalEnergy;
     private readonly OrbitPath3D _orbitPath = new (new List<Vector3?>(), color);
 
     // standard gravitational parameter
-    private ScientificDecimal Mu { get; set; } = mu;
+    public ScientificDecimal Mu { get; set; } = mu;
 
     private void CalculateInitials()
     {
+        if (Parent == null) throw new NullReferenceException("Parent cannot be null when calculating initials.");
         _specificAngularMomentumVector = Vector3.CrossProduct(RelativePosition, RelativeVelocity);
         _specificAngularMomentum = _specificAngularMomentumVector.Magnitude();
         _eccentricityVector = Vector3.CrossProduct(RelativeVelocity, _specificAngularMomentumVector) / Parent.Mu -
                               RelativePosition / RelativePosition.Magnitude();
         _eccentricity = _eccentricityVector.Value.Magnitude();
-        _periapsisTrueAnomaly = _eccentricityVector.Value.Flatten().PrincipalAngle();
-        _apoapsisTrueAnomaly = _periapsisTrueAnomaly + Math.PI;
+        Vector3 nVector = Vector3.CrossProduct(new Vector3(0, 0, 1), _specificAngularMomentumVector);
+        _ascendingNode = Math.Acos((double)(nVector.X / nVector.Magnitude())) % Math.Tau;
+        _inclination = Math.Acos((double)(_specificAngularMomentumVector.Z / _specificAngularMomentum)) % Math.Tau;
+        _argumentOfPeriapsis = Math.Acos((double)(nVector * _eccentricityVector / nVector.Magnitude() * _eccentricity));
+        _argumentOfApoapsis = _argumentOfPeriapsis + Math.PI;
         _specificOrbitalEnergy = RelativeVelocity.Magnitude() * RelativeVelocity.Magnitude() * 0.5f - 
                                  Parent.Mu / RelativePosition.Magnitude();
     }
@@ -105,23 +111,31 @@ public class Body3D(string name, ScientificDecimal mass, ScientificDecimal radiu
     
     private ScientificDecimal PolarDistanceAtAnomaly(double angle)
     {
-        if (_eccentricityVector == null) throw new NullReferenceException();
+        if (Parent == null || _eccentricityVector == null) throw new NullReferenceException();
         ScientificDecimal constant = _specificAngularMomentum * _specificAngularMomentum / Parent.Mu;
-        return constant / (1 + _eccentricityVector.Value.Magnitude() * Math.Cos(angle - _periapsisTrueAnomaly));
+        return constant / (1 + _eccentricityVector.Value.Magnitude() * Math.Cos(angle - _argumentOfPeriapsis));
     }
 
-    public Vector2 CartesianDistanceAtAnomaly(double angle)
+    public Vector3 CartesianDistanceAtAnomaly(double angle)
     {
-        angle += _apoapsisTrueAnomaly;
+        angle += _argumentOfPeriapsis + _ascendingNode;
         ScientificDecimal distance = PolarDistanceAtAnomaly(angle);
-        return new Vector2(distance * Math.Cos(angle), distance * Math.Sin(angle));
+        Vector3 nonInclinedPosition = new(distance * Math.Cos(angle), distance * Math.Sin(angle), 0);
+        // r is the distance from axis of rotation to the noninclined position
+        ScientificDecimal r = distance * Math.Cos(_ascendingNode - Vector2.AngleBetween(nonInclinedPosition.Flatten(), Vector2.Zero));
+        Vector3 rVector = new Vector3(r * Math.Cos(_ascendingNode), r * Math.Sin(_ascendingNode), 0);
+        Vector3 inclinedRVector = new Vector3(
+            r * Math.Cos(_ascendingNode) * Math.Cos(_inclination), 
+            r * Math.Sin(_ascendingNode) * Math.Cos(_inclination), 
+            r * Math.Sin(_inclination));
+        return nonInclinedPosition + rVector - inclinedRVector;
     }
 
     public ScientificDecimal OrbitalPeriod()
     {
         if (Parent == null) throw new NullReferenceException();
         ScientificDecimal constant = 4 * Math.PI * Math.PI / Parent.Mu;
-        ScientificDecimal semiMajorAxis = PolarDistanceAtAnomaly(_periapsisTrueAnomaly); 
+        ScientificDecimal semiMajorAxis = PolarDistanceAtAnomaly(_argumentOfApoapsis); 
         return ScientificDecimal.Sqrt(constant * semiMajorAxis * semiMajorAxis * semiMajorAxis);
     }
 
@@ -218,23 +232,17 @@ public class Body3D(string name, ScientificDecimal mass, ScientificDecimal radiu
     public void CalculateOrbitScreenPoints(DrawOptions options)
         => _orbitPath.CalculateScreenPoints(options);
 
-    /*
-    public double GetTrajectoryAngle(Vector2 futureLocation)
-    {
-        return Vector2.AngleBetween(RelativePosition, futureLocation);
-    }
-    */
+    public Vector3 GetTrajectory(Vector3 futureLocation)
+        => futureLocation - Position;
+    
+    public void LogTrajectory(Vector3 futureLocation)
+        => _lastLoggedTrajectory = GetTrajectory(futureLocation);
 
-    /*
-    public void LogTrajectory(Vector2 futureLocation)
+    public double GetTrajectoryAngularDeviation(Vector3 futureLocation)
     {
-        _lastLoggedAngle = GetTrajectoryAngle(futureLocation);
+        if (_lastLoggedTrajectory.Magnitude() == 0) return double.MaxValue;
+        return Vector3.AngleBetween(GetTrajectory(futureLocation), _lastLoggedTrajectory);
     }
-
-    public double GetAngularDeviationSinceLastLoggedPosition(Vector2 futureLocation)
-    {
-        return Math.Abs((GetTrajectoryAngle(futureLocation) - _lastLoggedAngle) % Math.Tau);
-    }*/
 
     #endregion
 }
