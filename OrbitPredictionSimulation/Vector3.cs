@@ -35,27 +35,7 @@ public struct Vector3(ScientificDecimal x, ScientificDecimal y, ScientificDecima
         => new (a.Y * b.Z - a.Z * b.Y, a.Z * b.X - a.X * b.Z, a.X * b.Y - a.Y * b.X);
 
     public Vector2 Flatten()
-    {
-        return new Vector2(X, Y);
-    }
-    
-    /*
-    public double PrincipalAngle()
-    {
-        double angle = Math.Atan((double)(Y / X));
-        if (X < 0 && Y > 0) return Math.PI + angle;
-        if (X < 0 && Y < 0) return Math.PI + angle;
-        if (X > 0 && Y < 0) return Math.Tau + angle;
-        return angle;
-    }*/
-
-    /*
-    public static double AngleBetween(Vector2 start, Vector2 end)
-    {
-        Vector2 difference = end - start;
-        return difference.PrincipalAngle();
-    }
-    */
+        => new (X, Y);
     
     public static double AngleBetween(Vector3 a, Vector3 b)
         => Math.Acos((double)(a * b / (a.Magnitude() * b.Magnitude())));

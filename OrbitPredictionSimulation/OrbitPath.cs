@@ -13,7 +13,7 @@ public class OrbitPath(List<Vector3?> points, SKColor color)
 
     public void LogPosition(Body body, int maxPositions)
     {
-        Points.Add(body.Position - (Parent?.Position ?? Vector3.Zero));
+        Points.Add(body.RelativePosition);
         if (Points.Count > maxPositions)
             Points.RemoveAt(0);
     }

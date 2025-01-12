@@ -31,6 +31,8 @@ public class Body(string name, ScientificDecimal mass, ScientificDecimal radius,
     private double _inclination;
     private double _argumentOfPeriapsis;
     private double _argumentOfApoapsis;
+    private double _initialTrueAnomaly;
+    private ScientificDecimal _initialTime;
     private Vector3 _specificAngularMomentumVector;
     private ScientificDecimal _specificAngularMomentum;
     private ScientificDecimal _specificOrbitalEnergy;
@@ -48,10 +50,21 @@ public class Body(string name, ScientificDecimal mass, ScientificDecimal radius,
                               RelativePosition / RelativePosition.Magnitude();
         _eccentricity = _eccentricityVector.Value.Magnitude();
         Vector3 nVector = Vector3.CrossProduct(new Vector3(0, 0, 1), _specificAngularMomentumVector);
-        _ascendingNode = Math.Acos((double)(nVector.X / nVector.Magnitude())) % Math.Tau;
+        
         _inclination = Math.Acos((double)(_specificAngularMomentumVector.Z / _specificAngularMomentum)) % Math.Tau;
-        _argumentOfPeriapsis = Math.Acos((double)(nVector * _eccentricityVector / nVector.Magnitude() * _eccentricity));
+        _ascendingNode = Math.Acos((double)(nVector.X / nVector.Magnitude()));
+        if (nVector.Y < 0) _ascendingNode = Math.Tau - _ascendingNode;
+        _argumentOfPeriapsis = Math.Acos((double)(nVector * _eccentricityVector / (nVector.Magnitude() * _eccentricity)));
+        if (_eccentricityVector.Value.Z < 0) _argumentOfPeriapsis = Math.Tau - _argumentOfPeriapsis;
         _argumentOfApoapsis = _argumentOfPeriapsis + Math.PI;
+        _initialTrueAnomaly = Math.Acos((double)(_eccentricityVector * RelativePosition / (_eccentricity * RelativePosition.Magnitude())));
+        if (RelativePosition * RelativeVelocity < 0) _initialTrueAnomaly = Math.Tau - _initialTrueAnomaly;
+        double initialEccentricAnomaly = ScientificDecimal.Atan2Tau(
+            ScientificDecimal.Sqrt(1 - _eccentricity * _eccentricity) * Math.Sin(_initialTrueAnomaly),
+                     _eccentricity + Math.Cos(_initialTrueAnomaly));
+        _initialTime = (initialEccentricAnomaly - _eccentricity * Math.Sin(initialEccentricAnomaly)) * OrbitalPeriod() /
+                       Math.Tau;
+        
         _specificOrbitalEnergy = RelativeVelocity.Magnitude() * RelativeVelocity.Magnitude() * 0.5f - 
                                  Parent.Mu / RelativePosition.Magnitude();
     }
@@ -111,22 +124,24 @@ public class Body(string name, ScientificDecimal mass, ScientificDecimal radius,
     {
         if (Parent == null || _eccentricityVector == null) throw new NullReferenceException();
         ScientificDecimal constant = _specificAngularMomentum * _specificAngularMomentum / Parent.Mu;
-        return constant / (1 + _eccentricityVector.Value.Magnitude() * Math.Cos(angle - _argumentOfPeriapsis));
+        return constant / (1 + _eccentricityVector.Value.Magnitude() * Math.Cos(angle - _argumentOfPeriapsis - _ascendingNode));
     }
 
-    public Vector3 CartesianDistanceAtAnomaly(double angle)
+    public Vector3 CartesianDistanceAtAnomaly(double trueAnomaly)
     {
-        angle += _argumentOfPeriapsis + _ascendingNode;
+        double inclinedAngle = trueAnomaly + _initialTrueAnomaly + _argumentOfPeriapsis;
+        double angle = inclinedAngle + _ascendingNode;
         ScientificDecimal distance = PolarDistanceAtAnomaly(angle);
         Vector3 nonInclinedPosition = new(distance * Math.Cos(angle), distance * Math.Sin(angle), 0);
-        // r is the distance from axis of rotation to the non-inclined position
-        ScientificDecimal r = distance * Math.Cos(_ascendingNode - Vector2.AngleTo(nonInclinedPosition.Flatten(), Vector2.Zero));
-        Vector3 rVector = new Vector3(r * Math.Cos(_ascendingNode), r * Math.Sin(_ascendingNode), 0);
+        
+        ScientificDecimal r = distance * Math.Cos(inclinedAngle - Math.PI / 2f);
+        double q = Math.PI / 2f + _ascendingNode;
+        Vector3 rVector = new Vector3(r * Math.Cos(q), r * Math.Sin(q), 0);
         Vector3 inclinedRVector = new Vector3(
-            r * Math.Cos(_ascendingNode) * Math.Cos(_inclination), 
-            r * Math.Sin(_ascendingNode) * Math.Cos(_inclination), 
+            r * Math.Cos(q) * Math.Cos(_inclination), 
+            r * Math.Sin(q) * Math.Cos(_inclination), 
             r * Math.Sin(_inclination));
-        return nonInclinedPosition + rVector - inclinedRVector;
+        return nonInclinedPosition - rVector + inclinedRVector;
     }
 
     public ScientificDecimal OrbitalPeriod()
@@ -139,6 +154,7 @@ public class Body(string name, ScientificDecimal mass, ScientificDecimal radius,
 
     private double MeanAnomaly(ScientificDecimal time)
     {
+        time += _initialTime;
         ScientificDecimal meanMotion = Math.Tau / OrbitalPeriod();
         return (double)(time * meanMotion);
     }
@@ -161,7 +177,7 @@ public class Body(string name, ScientificDecimal mass, ScientificDecimal radius,
         double eccentricAnomaly = EccentricAnomaly(time);
         ScientificDecimal y = Math.Sin(eccentricAnomaly) * ScientificDecimal.Sqrt(1 - _eccentricity * _eccentricity);
         ScientificDecimal x = Math.Cos(eccentricAnomaly) - _eccentricity;
-        return Math.Atan2((double) y, (double) x) % Math.Tau;
+        return (Math.Atan2((double) y, (double) x) - _initialTrueAnomaly) % Math.Tau;
     }
 
     public Vector3 GetInstantGravitationalForce(Body attractor)
@@ -198,7 +214,7 @@ public class Body(string name, ScientificDecimal mass, ScientificDecimal radius,
         if (Parent == null) throw new NullReferenceException();
         ScientificDecimal speed = RelativeVelocity.Magnitude();
         ScientificDecimal distance = RelativePosition.Magnitude();
-        return speed * speed * 0.5f - (Parent.Mass * G) / distance;
+        return speed * speed * 0.5f - Parent.Mu / distance;
     }
 
     public void ResetSpecificOrbitalEnergy()
@@ -206,7 +222,7 @@ public class Body(string name, ScientificDecimal mass, ScientificDecimal radius,
         if (Parent == null) throw new NullReferenceException();
         ScientificDecimal distance = RelativePosition.Magnitude();
         if(2 * (_specificOrbitalEnergy + Parent.Mass * G / distance) < 0) return;
-        ScientificDecimal desiredSpeed = ScientificDecimal.Sqrt(2 * (_specificOrbitalEnergy + Parent.Mass * G / distance));
+        ScientificDecimal desiredSpeed = ScientificDecimal.Sqrt(2 * (_specificOrbitalEnergy + Parent.Mu / distance));
         SetRelativeVelocity(RelativeVelocity / RelativeVelocity.Magnitude() * desiredSpeed);
     }
     

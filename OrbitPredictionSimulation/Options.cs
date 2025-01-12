@@ -5,7 +5,7 @@ namespace OrbitPredictionSimulation;
 public static class Options
 {
     // Simulation options
-    public static readonly SimulationMethod SimMethod = SimulationMethod.Leapfrog;
+    public static readonly SimulationMethod SimMethod = SimulationMethod.Kepler;
     public const bool CorrectOrbitalEnergyDrift = true;
     
     // Window graphics options
@@ -17,7 +17,7 @@ public static class Options
     public const int MinimumVisibleRadius = 10;
     public const int CrossSpokeSize = 7;
     public const int CrossSpokeWidth = 2;
-    public const int MaxOrbitPathPositions = 50000;
+    public const int MaxOrbitPathPositions = 1000;
     public const int OrbitPathWidth = 2;
     
     // These only affects bodies which are in an elliptic trajectory

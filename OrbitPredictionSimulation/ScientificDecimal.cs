@@ -13,6 +13,7 @@ public struct ScientificDecimal
     public decimal Mantissa { get; set; }
     public int Exponent { get; set; }
     public bool Positive => decimal.IsPositive(Mantissa);
+    public bool Negative => decimal.IsNegative(Mantissa);
 
     public ScientificDecimal(decimal mantissa, int exponent)
     {
@@ -138,20 +139,12 @@ public struct ScientificDecimal
 
     public static bool operator <(ScientificDecimal left, ScientificDecimal right)
     {
-        if (left.Positive && !right.Positive) return false;
-        if (!left.Positive && right.Positive) return true;
-        bool result = left.Exponent == right.Exponent ? left.Mantissa < right.Mantissa : left.Exponent < right.Exponent;
-        if (left.Positive && right.Positive) return result;
-        return !result;
+        return (right - left).Positive;
     }
     
     public static bool operator >(ScientificDecimal left, ScientificDecimal right)
     {
-        if (left.Positive && !right.Positive) return true;
-        if (!left.Positive && right.Positive) return false;
-        bool result = left.Exponent == right.Exponent ? left.Mantissa > right.Mantissa : left.Exponent > right.Exponent;
-        if (left.Positive && right.Positive) return result;
-        return !result;
+        return (left - right).Positive;
     }
     
     public static bool operator <=(ScientificDecimal left, ScientificDecimal right)
@@ -173,6 +166,16 @@ public struct ScientificDecimal
 
     public static ScientificDecimal Abs(ScientificDecimal value)
         => new (Math.Abs(value.Mantissa), value.Exponent);   
+    
+    // Atan2 function with scientific decimal which returns in the range 0 <= x < Tau
+    public static double Atan2Tau(ScientificDecimal y, ScientificDecimal x)
+    {
+        double result = Math.Atan((double)(y / x));
+        if (x < 0 && y > 0) return Math.PI + result;
+        if (x < 0 && y < 0) return Math.PI + result;
+        if (x > 0 && y < 0) return (Math.Tau + result) % Math.Tau;
+        return result;
+    }
     
     #endregion
     
