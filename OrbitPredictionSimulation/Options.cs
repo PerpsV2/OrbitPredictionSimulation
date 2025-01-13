@@ -5,13 +5,14 @@ namespace OrbitPredictionSimulation;
 public static class Options
 {
     // Simulation options
-    public static readonly SimulationMethod SimMethod = SimulationMethod.Kepler;
+    public static readonly SimulationMethod SimMethod = SimulationMethod.RungeKutta4;
     public const bool CorrectOrbitalEnergyDrift = true;
+    public const bool LogEarthOrbitalPeriod = true;
     
     // Window graphics options
     public static readonly (int width, int height) ScreenSize = (800, 800);
     public const int FontSize = 20;
-    public const int ScientificPrintPrecision = 5;
+    public const int ScientificPrintPrecision = 20;
     
     // Planet graphics options
     public const int MinimumVisibleRadius = 10;

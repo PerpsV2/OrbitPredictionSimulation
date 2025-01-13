@@ -29,106 +29,7 @@ using SKSurface surface = SKSurface.Create(grContext, renderTarget, GRSurfaceOri
 using SKCanvas canvas = surface.Canvas;
 IInputContext input = window.CreateInput();
 
-/*
-Body sun = new Body(
-    "Sun",
-    new ScientificDecimal(1.989m, 30), 
-    new ScientificDecimal(6.96340m, 8), 
-    Vector2.Zero, 
-    Vector2.Zero,
-    new SKColor(255, 255, 255, 255)
-    );
-Body mercury = new Body(
-    "Mercury",
-    new ScientificDecimal(3.285m, 23),
-    new ScientificDecimal(2.4397m, 6),
-    new Vector2(new ScientificDecimal(-5.7910403m, 10), new ScientificDecimal(-7.28489453m, 8)),
-    new Vector2(new ScientificDecimal(-9.5219453m, 3), new ScientificDecimal(-4.66180626m, 4)),
-    new SKColor(140, 140, 140, 255),
-    sun
-    );
-Body venus = new Body(
-    "Venus",
-    new ScientificDecimal(4.867m, 24),
-    new ScientificDecimal(6.0518m, 6),
-    new Vector2(new ScientificDecimal(8.099679m, 10), new ScientificDecimal(7.1657153m, 10)),
-    new Vector2(new ScientificDecimal(-2.33109495m, 4), new ScientificDecimal(2.60801434m, 4)),
-    new SKColor(230, 160, 40, 255),
-    sun
-    );
-Body earth = new Body(
-    "Earth",
-    new ScientificDecimal(5.9722m, 24), 
-    new ScientificDecimal(6.378m, 6), 
-    new Vector2(new ScientificDecimal(-9.4260948m,9), new ScientificDecimal(1.4615465m, 11)), 
-    new Vector2(new ScientificDecimal(-3.0211005m, 4), new ScientificDecimal(-1.8512639m, 3)),
-    new SKColor(100, 200, 255, 255),
-    sun
-    );
-Body mars = new Body(
-    "Mars",
-    new ScientificDecimal(6.39m, 23),
-    new ScientificDecimal(3.3895m, 6),
-    new Vector2(new ScientificDecimal(-6.6538489m, 10), new ScientificDecimal(2.30876679m, 11)),
-    new Vector2(new ScientificDecimal(-2.23662636m, 4), new ScientificDecimal(-4.64996864m, 3)),
-    new SKColor(255, 100, 100, 255),
-    sun
-    );
-Body jupiter = new Body(
-    "Jupiter",
-    new ScientificDecimal(1.898m, 27),
-    new ScientificDecimal(6.9911m, 7),
-    new Vector2(new ScientificDecimal(1.646840029m, 11), new ScientificDecimal(7.41960946m, 11)),
-    new Vector2(new ScientificDecimal(-1.2918988m, 4), new ScientificDecimal(3.44874193m, 3)),
-    new SKColor(150, 120, 80, 255),
-    sun
-    );
-Body saturn = new Body(
-    "Saturn",
-    new ScientificDecimal(5.683m, 26),
-    new ScientificDecimal(5.8232m, 7),
-    new Vector2(new ScientificDecimal(1.41471083m, 12), new ScientificDecimal(-2.6889596m, 11)),
-    new Vector2(new ScientificDecimal(1.26040197m, 3), new ScientificDecimal(9.4750489m, 3)),
-    new SKColor(150, 150, 80, 255),
-    sun
-    );
-Body uranus = new Body(
-    "Uranus",
-    new ScientificDecimal(8.681m, 25),
-    new ScientificDecimal(2.5362m, 7),
-    new Vector2(new ScientificDecimal(1.6640173m, 12), new ScientificDecimal(2.4058560m, 12)),
-    new Vector2(new ScientificDecimal(-5.6637003m, 3), new ScientificDecimal(3.562345m, 3)),
-    new SKColor(170, 200, 255, 255),
-    sun
-    );
-Body neptune = new Body(
-    "Neptune",
-    new ScientificDecimal(1.024m, 26),
-    new ScientificDecimal(2.4622m, 7),
-    new Vector2(new ScientificDecimal(4.4699374m, 12), new ScientificDecimal(-9.7710185m, 10)),
-    new Vector2(new ScientificDecimal(7.1819887m, 1), new ScientificDecimal(5.4722076m, 3)),
-    new SKColor(100, 120, 200, 255),
-    sun
-    );
-Body pluto = new Body(
-    "Pluto",
-    // mass of pluto and charon
-    new ScientificDecimal(1.309m, 22) + new ScientificDecimal(1.590m, 21),
-    new ScientificDecimal(1.1883m, 6),
-    new Vector2(new ScientificDecimal(2.724516m, 12), new ScientificDecimal(-4.489976m, 12)),
-    new Vector2(new ScientificDecimal(4.7806206m, 3), new ScientificDecimal(1.6245027m, 3)),
-    new SKColor(200, 100, 200, 255),
-    sun
-    );
-Body moon = new Body(
-    "Moon",
-    new ScientificDecimal(7.349m, 22), 
-    new ScientificDecimal(1.737m, 6), 
-    new Vector2(new ScientificDecimal(-3.1899866m, 8), new ScientificDecimal(-2.44970212m, 8)), 
-    new Vector2(new ScientificDecimal(6.1224179m, 2), new ScientificDecimal(-7.5360303m, 2)),
-    new SKColor(180, 180, 180, 255),
-    earth
-    );*/
+#region BodyData
 
 Body sun = new Body(
     "Sun",
@@ -180,14 +81,14 @@ Body earth = new Body(
     new ScientificDecimal(5.9722m, 24), 
     new ScientificDecimal(6.378m, 6), 
     new Vector3(
-        new ScientificDecimal(-9.4260948m, 9), 
-        new ScientificDecimal( 1.4615465m, 11), 
-        new ScientificDecimal(-8.0666553m, 6)
+        new ScientificDecimal(-8.5613233m, 9), 
+        new ScientificDecimal( 1.4688537m, 11), 
+        new ScientificDecimal(-8.2420883m, 6)
         ), 
     new Vector3(
-        new ScientificDecimal(-3.0211005m, 4), 
-        new ScientificDecimal(-1.8512639m, 3), 
-        new ScientificDecimal( 1.2098514m, 0)
+        new ScientificDecimal(-3.0223357m, 4), 
+        new ScientificDecimal(-1.8447646m, 3), 
+        new ScientificDecimal( 2.7092976m, -1)
         ),
     new ScientificDecimal(3.986004418m, 14),
     new SKColor(100, 200, 255, 255),
@@ -322,21 +223,25 @@ Body pluto = new Body(
     sun
     );
 
-Body[] bodies = [sun, mercury, venus, earth, moon, mars, jupiter, saturn, uranus, neptune, pluto];
+#endregion
+
+Body[] bodies = [sun, mercury, venus, earth, mars, jupiter, saturn, uranus, neptune, pluto];
 
 Camera camera = new Camera(Vector2.Zero, Options.DefaultCamZoom, Options.DefaultCamZoom);
 
 int trackingIndex = 0;
-Body? tracking = null;
+Body? tracking = sun;
 
 SKPaint paint = new SKPaint
 {
     Color = SKColors.White,
 };
+
 SKFont font = new SKFont
 {
     Size = Options.FontSize,
 };
+
 DrawOptions drawOptions = new DrawOptions(
     canvas,
     paint,
@@ -348,6 +253,8 @@ ScientificDecimal time = 0;
 ScientificDecimal timeStep = new ScientificDecimal(1m, 0);
 ScientificDecimal deltaTime;
 DateTime previousTime = DateTime.Now;
+
+double earthYearTargetAngle = ScientificDecimal.Atan2Tau(earth.Position.Y, earth.Position.X);
 
 void HandleKeyPresses(IKeyboard keyboard, Key key, int keyCode)
 {
@@ -514,7 +421,7 @@ void ApplyIntegratorStep(Action integrator)
         if (body.Parent != null)
             if (!body.IsInOrbit())
                 body.SetParent(body.Parent.Parent);
-
+    
     integrator();
     
     if (Options.CorrectOrbitalEnergyDrift)
@@ -563,6 +470,11 @@ void OnRender(double _)
     time += deltaTime * timeStep;
     
     foreach (Body body in bodies) body.Draw(drawOptions);
+
+    bool approachingYearFlag = false;
+    if (Options.LogEarthOrbitalPeriod)
+        if (ScientificDecimal.Atan2Tau(earth.Position.Y, earth.Position.X) < earthYearTargetAngle)
+            approachingYearFlag = true;
     
     switch (Options.SimMethod)
     {
@@ -573,10 +485,12 @@ void OnRender(double _)
         case SimulationMethod.Kepler: ApplyKeplerMethod(); break;
     }
     
+    if (Options.LogEarthOrbitalPeriod && approachingYearFlag)
+        if (ScientificDecimal.Atan2Tau(earth.Position.Y, earth.Position.X) > earthYearTargetAngle)
+            Console.WriteLine(time);
+    
     if (tracking != null) camera.SetOrigin(tracking.Position.Flatten());
-    
     foreach (Body body in bodies) body.DrawOrbitPath(drawOptions);
-    
     HandleInput(input.Keyboards[0]);
     
     canvas.DrawText("Simulation Method: " + Options.SimMethod, 20, 40, font, paint);
