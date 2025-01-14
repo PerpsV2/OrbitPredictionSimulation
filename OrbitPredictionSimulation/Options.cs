@@ -1,3 +1,4 @@
+using System.Diagnostics.Contracts;
 using Silk.NET.Input;
 
 namespace OrbitPredictionSimulation;
@@ -6,13 +7,15 @@ public static class Options
 {
     // Simulation options
     public static readonly SimulationMethod SimMethod = SimulationMethod.RungeKutta4;
-    public const bool CorrectOrbitalEnergyDrift = true;
+    public const bool CorrectOrbitalEnergyDrift = false;
     public const bool LogEarthOrbitalPeriod = true;
+    public const bool LogEarthOrbitalEnergy = true;
+    public const int EnergyLogPoints = 51;
     
     // Window graphics options
     public static readonly (int width, int height) ScreenSize = (800, 800);
     public const int FontSize = 20;
-    public const int ScientificPrintPrecision = 20;
+    public const int ScientificPrintPrecision = 8;
     
     // Planet graphics options
     public const int MinimumVisibleRadius = 10;

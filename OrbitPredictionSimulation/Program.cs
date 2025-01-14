@@ -246,7 +246,7 @@ DrawOptions drawOptions = new DrawOptions(
     canvas,
     paint,
     camera,
-    (window.Size.X, window.Size.Y)
+    (Options.ScreenSize.width, Options.ScreenSize.height)
 );
 
 ScientificDecimal time = 0;
@@ -255,6 +255,7 @@ ScientificDecimal deltaTime;
 DateTime previousTime = DateTime.Now;
 
 double earthYearTargetAngle = ScientificDecimal.Atan2Tau(earth.Position.Y, earth.Position.X);
+double earthLogPointTargetAngle = earthYearTargetAngle + Math.Tau / Options.EnergyLogPoints;
 
 void HandleKeyPresses(IKeyboard keyboard, Key key, int keyCode)
 {
@@ -475,6 +476,11 @@ void OnRender(double _)
     if (Options.LogEarthOrbitalPeriod)
         if (ScientificDecimal.Atan2Tau(earth.Position.Y, earth.Position.X) < earthYearTargetAngle)
             approachingYearFlag = true;
+
+    bool approachingEnergyLogPointFlag = false;
+    if (Options.LogEarthOrbitalEnergy)
+        if (ScientificDecimal.Atan2Tau(earth.Position.Y, earth.Position.X) < earthLogPointTargetAngle)
+            approachingEnergyLogPointFlag = true;
     
     switch (Options.SimMethod)
     {
@@ -487,7 +493,17 @@ void OnRender(double _)
     
     if (Options.LogEarthOrbitalPeriod && approachingYearFlag)
         if (ScientificDecimal.Atan2Tau(earth.Position.Y, earth.Position.X) > earthYearTargetAngle)
-            Console.WriteLine(time);
+            Console.WriteLine("Orbital Period: " + time);
+
+    if (Options.LogEarthOrbitalEnergy && approachingEnergyLogPointFlag)
+    {
+        if (ScientificDecimal.Atan2Tau(earth.Position.Y, earth.Position.X) > earthLogPointTargetAngle)
+        {
+            Console.Write(earth.GetSpecificOrbitalEnergy() + ",");
+            earthLogPointTargetAngle += Math.Tau / Options.EnergyLogPoints;
+            earthLogPointTargetAngle %= Math.Tau;
+        }
+    }
     
     if (tracking != null) camera.SetOrigin(tracking.Position.Flatten());
     foreach (Body body in bodies) body.DrawOrbitPath(drawOptions);
