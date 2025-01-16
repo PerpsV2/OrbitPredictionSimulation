@@ -1,10 +1,13 @@
-﻿using OrbitPredictionSimulation;
+﻿using System.Numerics;
+using OrbitPredictionSimulation;
 using Silk.NET.Maths;
 using Silk.NET.Windowing;
 using Silk.NET.Windowing.Glfw;
 using Silk.NET.Input;
 using SkiaSharp;
 using Vector2 = OrbitPredictionSimulation.Vector2;
+using Vector3 = OrbitPredictionSimulation.Vector3;
+
 // ReSharper disable AccessToDisposedClosure
 
 WindowOptions options = WindowOptions.Default with
@@ -223,14 +226,71 @@ Body pluto = new Body(
     sun
     );
 
+Body star = new Body(
+    "Star",
+    100,
+    10,
+    Vector3.Zero,
+    Vector3.Zero,
+    100,
+    new SKColor(255, 255, 255, 255)
+    );
+Body planet = new Body(
+    "Planet",
+    1,
+    1,
+    new Vector3(100, 0, 0),
+    new Vector3(0, 1, 0),
+    1,
+    new SKColor(100, 255, 100, 255),
+    star
+    );
+
+Body binary1 = new Body(
+    "Binary1",
+    10,
+    10,
+    new Vector3(100, 0, 0),
+    new Vector3(0, 0.1, 0),
+    10,
+    new SKColor(255, 100, 100, 255)
+);
+Body binary2 = new Body(
+    "Binary2",
+    10,
+    10,
+    new Vector3(-100, 0, 0),
+    new Vector3(0, -0.1, 0),
+    10,
+    new SKColor(100, 255, 100, 255)
+);
+Body fun1 = new Body(
+    "Fun1",
+    10,
+    10,
+    new Vector3(0, 100, 0),
+    new Vector3(0, 0, 0.1),
+    10,
+    new SKColor(100, 100, 255, 255)
+);
+Body fun2 = new Body(
+    "Fun2",
+    10,
+    10,
+    new Vector3(0, -100, 0),
+    new Vector3(0, 0, -0.1),
+    10,
+    new SKColor(255, 100, 255, 255)
+);
+
 #endregion
 
-Body[] bodies = [sun, mercury, venus, earth, mars, jupiter, saturn, uranus, neptune, pluto];
+Body[] bodies = [binary1, binary2];
 
 Camera camera = new Camera(Vector2.Zero, Options.DefaultCamZoom, Options.DefaultCamZoom);
 
 int trackingIndex = 0;
-Body? tracking = sun;
+Body? tracking = bodies[0];
 
 SKPaint paint = new SKPaint
 {
@@ -256,6 +316,8 @@ DateTime previousTime = DateTime.Now;
 
 double earthYearTargetAngle = ScientificDecimal.Atan2Tau(earth.Position.Y, earth.Position.X);
 double earthLogPointTargetAngle = earthYearTargetAngle + Math.Tau / Options.EnergyLogPoints;
+
+ScientificDecimal targetTime = Options.LogTimeIncrement;
 
 void HandleKeyPresses(IKeyboard keyboard, Key key, int keyCode)
 {
@@ -460,6 +522,14 @@ void ApplyKeplerMethod()
             body.SetRelativePosition(body.CartesianDistanceAtAnomaly(body.TrueAnomaly(time)));
 }
 
+Vector3 OptimalOrbitPosition(double angle)
+{
+    ScientificDecimal distance = 1f / (new ScientificDecimal(2.5m, -2) - new ScientificDecimal(1.5m, -2) * Math.Cos(angle));
+    return new Vector3(distance * Math.Cos(angle), distance * Math.Sin(angle), 0);
+}
+
+int counter = 0;
+
 void OnRender(double _)
 {
     grContext.ResetContext();
@@ -504,7 +574,17 @@ void OnRender(double _)
             earthLogPointTargetAngle %= Math.Tau;
         }
     }
-    
+
+    if (time > targetTime)
+    {
+        targetTime += Options.LogTimeIncrement;
+        Console.Write((binary1.Position -
+                           OptimalOrbitPosition(ScientificDecimal.Atan2Tau(binary1.Position.Y, binary1.Position.X)))
+            .Magnitude() + ",");
+        if (counter++ >= 50)
+            Console.WriteLine("STOP");
+    }
+
     if (tracking != null) camera.SetOrigin(tracking.Position.Flatten());
     foreach (Body body in bodies) body.DrawOrbitPath(drawOptions);
     HandleInput(input.Keyboards[0]);
@@ -522,6 +602,10 @@ void OnRender(double _)
 
     if (tracking != null && Options.SimMethod != SimulationMethod.Kepler)
         canvas.DrawText("Velocity (m/s): " + tracking.RelativeVelocity.Magnitude(), 20, 200, font, paint);
+    if (tracking != null)
+        canvas.DrawText("Position: " + tracking.Position, 20, 240, font, paint);
+    if (tracking != null)
+        canvas.DrawText("Time elapsed: " + time, 20, 280, font, paint);
     
     canvas.Flush();
 }

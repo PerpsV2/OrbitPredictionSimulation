@@ -43,6 +43,7 @@ public class Body(string name, ScientificDecimal mass, ScientificDecimal radius,
 
     private void CalculateInitials()
     {
+        if (!Options.CalculateInitials) return;
         if (Parent == null) throw new NullReferenceException("Parent cannot be null when calculating initials.");
         _specificAngularMomentumVector = Vector3.CrossProduct(RelativePosition, RelativeVelocity);
         _specificAngularMomentum = _specificAngularMomentumVector.Magnitude();
@@ -235,6 +236,19 @@ public class Body(string name, ScientificDecimal mass, ScientificDecimal radius,
         if(2 * (_specificOrbitalEnergy + Parent.Mu / distance) < 0) return;
         ScientificDecimal desiredSpeed = ScientificDecimal.Sqrt(2 * (_specificOrbitalEnergy + Parent.Mu / distance));
         SetRelativeVelocity(RelativeVelocity / RelativeVelocity.Magnitude() * desiredSpeed);
+    }
+
+    public static Vector3 GetBarycenter(Body[] bodies)
+    {
+        Vector3 numerator = Vector3.Zero;
+        foreach (Body body in bodies)
+            numerator += body.Position * body.Mass;
+
+        ScientificDecimal denominator = 0;
+        foreach (Body body in bodies)
+            denominator += body.Mass;
+
+        return numerator / denominator;
     }
     
     #endregion

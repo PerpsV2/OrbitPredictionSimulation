@@ -6,10 +6,12 @@ namespace OrbitPredictionSimulation;
 public static class Options
 {
     // Simulation options
-    public static readonly SimulationMethod SimMethod = SimulationMethod.RungeKutta4;
+    public static readonly SimulationMethod SimMethod = SimulationMethod.VelocityVerlet;
     public const bool CorrectOrbitalEnergyDrift = false;
+    public const bool CalculateInitials = false;
     public const bool LogEarthOrbitalPeriod = true;
     public const bool LogEarthOrbitalEnergy = true;
+    public static readonly ScientificDecimal LogTimeIncrement = new (1m, 3);
     public const int EnergyLogPoints = 51;
     
     // Window graphics options
@@ -34,7 +36,7 @@ public static class Options
     public const int MinKeplerOrbitPoints = 20;
     
     // Camera options
-    public static readonly ScientificDecimal DefaultCamZoom = new (8);
+    public static readonly ScientificDecimal DefaultCamZoom = new (5m, 2);
     public const float CamMoveSpeed = 0.01f;
     public const float CamZoomSpeed = 0.05f;
     public const float FocusZoomRadiusMultiplier = 150f;

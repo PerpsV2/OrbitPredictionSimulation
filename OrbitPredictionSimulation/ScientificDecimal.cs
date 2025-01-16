@@ -183,7 +183,7 @@ public struct ScientificDecimal
     {
         string mantissaString = Mantissa.ToString(CultureInfo.InvariantCulture);
         mantissaString = (Positive ? "" : "-") + mantissaString.Substring(Positive ? 0 : 1, 
-            Math.Min(PrintPrecision + 1, mantissaString.Length));
+            Math.Min(PrintPrecision + 1, mantissaString.Length - (Positive ? 0 : 1)));
         return mantissaString + "e" + Exponent.ToString("+0;-#");
     }
 
